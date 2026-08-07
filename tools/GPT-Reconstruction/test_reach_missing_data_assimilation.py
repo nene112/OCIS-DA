@@ -10,6 +10,7 @@ import pytest
 
 import reach_missing_data_assimilation as da
 import pid_reconstruction as pid_reconstruction
+import parallel_pid_reconstruction as parallel_pid
 import rolling_nsga_reconstruction as rolling
 import enkf_plotting
 
@@ -155,6 +156,54 @@ def test_pid_resolves_unreported_downstream_gate_flow():
     assert pid_reconstruction._resolve_downstream_q(0.0, 24.43, 2.78, 0.35) == 21.65
     assert pid_reconstruction._resolve_downstream_q(18.0, 24.43, 2.78, 0.35) == 18.0
     assert pid_reconstruction._resolve_downstream_q(0.0, 24.43, 2.78, 0.0) == 0.0
+
+
+def test_parallel_pid_selects_reaches_with_enough_measured_water_levels():
+    reaches = [
+        da.ReachSpec(0, "上游闸A", "目标闸A", "上游闸A", "d0", "渠段A"),
+        da.ReachSpec(1, "上游闸B", "目标闸B", "上游闸B", "d1", "渠段B"),
+    ]
+    observations = {
+        da._normalize_name("目标闸A"): da.ObservationSeries(
+            [(datetime(2026, 1, 1), 2.0), (datetime(2026, 1, 2), 2.1)]
+        ),
+        da._normalize_name("目标闸B"): da.ObservationSeries(
+            [(datetime(2026, 1, 1), 3.0)]
+        ),
+    }
+    selected, inventory = parallel_pid.select_reaches_with_water_levels(
+        reaches, observations
+    )
+    assert [reach.pool_id for reach in selected] == [0]
+    assert inventory[0]["water_level_observation_count"] == 2
+    assert inventory[0]["selected"] is True
+    assert inventory[1]["selected"] is False
+    assert parallel_pid._worker_count(2, 8) == 2
+
+
+def test_parallel_pid_rejects_missing_model_object_or_initial_flow():
+    reaches = [
+        da.ReachSpec(0, "上游闸A", "目标闸A", "上游闸A", "d0", "渠段A"),
+        da.ReachSpec(1, "上游闸B", "目标闸B", "上游闸B", "d1", "渠段B"),
+    ]
+    times = [datetime(2026, 1, 1), datetime(2026, 1, 2)]
+    water_levels = {
+        da._normalize_name(reach.target_gate_name): da.ObservationSeries(
+            list(zip(times, [2.0, 2.1]))
+        )
+        for reach in reaches
+    }
+    selected, inventory = parallel_pid.select_reaches_with_water_levels(
+        reaches,
+        water_levels,
+        boundary_flow={"d1": da.ObservationSeries(list(zip(times, [3.0, 3.1])))},
+        model_gate_names={"目标闸a", "目标闸b", "d1"},
+        model_start_time=times[0],
+    )
+    assert [reach.pool_id for reach in selected] == [1]
+    assert "DLL 模型缺少对象: d0" in inventory[0]["reason"]
+    assert "模型起始时刻缺少基础分水流量" in inventory[0]["reason"]
+    assert inventory[1]["initial_boundary_flow"] == 3.0
 
 
 def test_plot_marks_only_isolated_measured_flow_spike():
