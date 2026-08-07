@@ -29,6 +29,8 @@ class PIDConfig:
     filter_flow_outliers: bool = False
     use_dll_flow_feedback: bool = True
     anti_windup_gain: float = 0.2
+    run_baseline: bool = True
+    minimum_valid_water_level: float = 0.2
 
     def validate(self) -> None:
         if self.steps <= 0:
@@ -43,6 +45,8 @@ class PIDConfig:
             raise ValueError("q_max 必须大于 q_min")
         if not 0.0 <= self.anti_windup_gain <= 1.0:
             raise ValueError("anti_windup_gain 必须位于 [0, 1]")
+        if self.minimum_valid_water_level < 0.0:
+            raise ValueError("minimum_valid_water_level 不能为负")
 
 
 class PIDController:
@@ -153,6 +157,18 @@ def _clean_flow_observations(bundle: da.ObservationBundle) -> da.ObservationBund
     )
 
 
+def filter_valid_water_levels(
+    observations: dict[str, da.ObservationSeries],
+    minimum: float,
+) -> dict[str, da.ObservationSeries]:
+    return {
+        name: da.ObservationSeries(
+            [(timestamp, value) for timestamp, value in series.values if value >= minimum]
+        )
+        for name, series in observations.items()
+    }
+
+
 def run_pid_reconstruction(
     case_path: str | Path,
     reach: da.ReachSpec,
@@ -181,6 +197,9 @@ def run_pid_reconstruction(
         ),
     )
     raw_observations = da._load_observation_bundle(files)
+    raw_observations.gate_h1 = filter_valid_water_levels(
+        raw_observations.gate_h1, config.minimum_valid_water_level
+    )
     observations = (
         _clean_flow_observations(raw_observations)
         if config.filter_flow_outliers
@@ -201,17 +220,19 @@ def run_pid_reconstruction(
     )
     resolved_dll = Path(dll_path or da.TOOLS_DIR / "OcisMILPNet.dll").resolve()
 
+    client_count = 2 if config.run_baseline else 1
     if client_factory is None:
         clients, dll_copies = da._load_isolated_clients(
-            resolved_dll, 2, runtime_payload, hydraulic_config
+            resolved_dll, client_count, runtime_payload, hydraulic_config
         )
     else:
         clients = [
             da._load_client(runtime_payload, hydraulic_config, client_factory)
-            for _ in range(2)
+            for _ in range(client_count)
         ]
         dll_copies = []
-    baseline_client, pid_client = clients
+    baseline_client = clients[0] if config.run_baseline else None
+    pid_client = clients[-1]
     try:
         _, name_to_id = da._parse_gate_info(pid_client.get_gate_info_sim())
         target_gate_id = name_to_id.get(da._normalize_name(reach.target_gate_name))
@@ -269,10 +290,10 @@ def run_pid_reconstruction(
 
         for step in range(profile_size):
             outputs: list[dict[str, float | None]] = []
-            for client, q_value in (
-                (baseline_client, base_q[step]),
-                (pid_client, applied_q[step]),
-            ):
+            trajectories = [(pid_client, applied_q[step])]
+            if baseline_client is not None:
+                trajectories.insert(0, (baseline_client, base_q[step]))
+            for client, q_value in trajectories:
                 client.update_BC_sim_only(step)
                 client.set_GatesFlow_byID_sim(boundary_gate_id, float(q_value))
                 da._set_mu(
@@ -320,7 +341,15 @@ def run_pid_reconstruction(
                         "opening": gate_opening,
                     }
                 )
-            baseline, controlled = outputs
+            controlled = outputs[-1]
+            baseline = outputs[0] if baseline_client is not None else {
+                "h1": None,
+                "h2": None,
+                "gate_q": None,
+                "upstream_q": None,
+                "boundary_q_dll": None,
+                "opening": None,
+            }
             target = targets[step]
             error = (
                 float(target) - float(controlled["h1"])
@@ -434,6 +463,7 @@ def run_pid_reconstruction(
         rows,
         segment_name=reach.segment_name,
         mark_flow_outliers=config.filter_flow_outliers,
+        show_baseline=config.run_baseline,
     )
     execution_errors = np.asarray(
         [

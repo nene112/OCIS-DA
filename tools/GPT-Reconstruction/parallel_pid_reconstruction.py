@@ -18,8 +18,9 @@ import reach_missing_data_assimilation as da
 CASE_NAME = "sj_zonggan-d0"
 STEPS = 720
 MIN_WATER_LEVEL_OBSERVATIONS = 2
-# 每个任务会加载两份 DLL；默认限制为 2，避免过多实例并发初始化不稳定。
+# 每个任务开启基准时加载两份 DLL，否则仅加载一份。
 MAX_WORKERS: int | None = 2
+RUN_BASELINE = True
 PID_CONFIG = pid_reconstruction.PIDConfig(
     steps=STEPS,
     kp=40.0,
@@ -31,6 +32,7 @@ PID_CONFIG = pid_reconstruction.PIDConfig(
     initial_water_depth=2.2,
     filter_flow_outliers=False,
     use_dll_flow_feedback=True,
+    run_baseline=RUN_BASELINE,
 )
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -278,7 +280,10 @@ def run_parallel_pid() -> dict[str, Any]:
             gate_h1=stage_path,
         ),
     )
-    gate_h1 = da.load_observation_csv(files.gate_h1)
+    gate_h1 = pid_reconstruction.filter_valid_water_levels(
+        da.load_observation_csv(files.gate_h1),
+        PID_CONFIG.minimum_valid_water_level,
+    )
     boundary_flow = da.load_observation_csv(files.boundary_flow)
     reaches = da.discover_reaches(case_path)
     model_gate_names, model_start_time = _inspect_model(

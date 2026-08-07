@@ -49,6 +49,7 @@ def write_reconstruction_png(
     *,
     segment_name: str,
     mark_flow_outliers: bool = True,
+    show_baseline: bool = True,
 ) -> Path:
     """绘制水位、分水流量以及渠段进出流量与净流量。"""
 
@@ -73,7 +74,8 @@ def write_reconstruction_png(
     fig.patch.set_facecolor("#f8fafc")
 
     stage_ax = axes[0]
-    stage_ax.plot(x, series("h1_forecast"), color="#2563eb", linewidth=1.8, label="模拟水位")
+    if show_baseline:
+        stage_ax.plot(x, series("h1_forecast"), color="#2563eb", linewidth=1.8, label="基准模拟水位")
     stage_ax.plot(x, series("h1_analysis"), color="#16a34a", linewidth=1.9, label="分析后水位")
     if any(row.get("h1_control_target") not in (None, "") for row in rows):
         stage_ax.plot(
@@ -99,7 +101,7 @@ def write_reconstruction_png(
     )
     flow_ax.plot(x, series("q_boundary_forecast"), color="#64748b", linewidth=1.6, label="原始设定分水流量")
     flow_ax.plot(x, series("q_boundary_analysis"), color="#16a34a", linewidth=1.9, label="PID设定分水流量")
-    if any(row.get("q_boundary_dll_forecast") not in (None, "") for row in rows):
+    if show_baseline and any(row.get("q_boundary_dll_forecast") not in (None, "") for row in rows):
         flow_ax.plot(
             x,
             series("q_boundary_dll_forecast"),
@@ -151,12 +153,14 @@ def write_reconstruction_png(
         linestyle=(0, (4, 2)),
         label="边界给定流量",
     )
+    simulation_suffix = "forecast" if show_baseline else "analysis"
+    simulation_label = "基准" if show_baseline else "PID"
     reach_flow_ax.plot(
         x,
-        series("upstream_gate_q_forecast"),
+        series(f"upstream_gate_q_{simulation_suffix}"),
         color="#0f766e",
         linewidth=2.0,
-        label="上游闸模拟流量",
+        label=f"上游闸{simulation_label}模拟流量",
     )
     reach_flow_ax.scatter(
         x,
@@ -182,10 +186,10 @@ def write_reconstruction_png(
         )
     reach_flow_ax.plot(
         x,
-        series("gate_q_forecast"),
+        series(f"gate_q_{simulation_suffix}"),
         color="#b91c1c",
         linewidth=2.0,
-        label="下游闸模拟流量",
+        label=f"下游闸{simulation_label}模拟流量",
     )
     reach_flow_ax.scatter(
         x,
@@ -211,11 +215,11 @@ def write_reconstruction_png(
         )
     reach_flow_ax.plot(
         x,
-        series("net_gate_q_forecast"),
+        series(f"net_gate_q_{simulation_suffix}"),
         color="#7c3aed",
         linewidth=2.2,
         linestyle="-.",
-        label="渠段净流量（入正出负）",
+        label=f"{simulation_label}渠段净流量（入正出负）",
     )
     reach_flow_ax.set_xlabel("时间步")
     reach_flow_ax.set_ylabel("流量")

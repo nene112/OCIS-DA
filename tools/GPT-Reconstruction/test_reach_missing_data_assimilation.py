@@ -58,6 +58,14 @@ class NaNClient(FakeClient):
     def check_nan_sim(self): return True
 
 
+class CountingClient(FakeClient):
+    created = 0
+
+    def __init__(self):
+        super().__init__()
+        type(self).created += 1
+
+
 def write_wide(path: Path, header: list[str], rows: list[list[object]]):
     with path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
@@ -266,6 +274,16 @@ def test_pid_ignores_flow_outlier_but_preserves_raw_bundle():
     assert cleaned.boundary_flow["gate"].value_at(times[4], 86400, "exact") == 13.5
 
 
+def test_pid_filters_zero_water_level_placeholders():
+    times = [datetime(2026, 1, day) for day in range(1, 4)]
+    filtered = pid_reconstruction.filter_valid_water_levels(
+        {"gate": da.ObservationSeries(list(zip(times, [0.0, 2.2, 2.3])))},
+        minimum=0.01,
+    )
+    assert filtered["gate"].value_at(times[0], 86400, "exact") is None
+    assert filtered["gate"].value_at(times[1], 86400, "exact") == 2.2
+
+
 def test_pid_fake_hydraulic_hourly_tracking(tmp_path: Path):
     case = make_case(tmp_path)
     result = pid_reconstruction.run_pid_reconstruction(
@@ -306,6 +324,31 @@ def test_pid_stops_when_hydraulic_dll_reports_nan(tmp_path: Path):
             output_root=tmp_path / "pid_nan",
             client_factory=NaNClient,
         )
+
+
+def test_pid_can_skip_baseline_calculation_and_plot(tmp_path: Path):
+    case = make_case(tmp_path)
+    CountingClient.created = 0
+    result = pid_reconstruction.run_pid_reconstruction(
+        case,
+        da.discover_reaches(case)[0],
+        config=pid_reconstruction.PIDConfig(
+            steps=2,
+            run_baseline=False,
+            initial_water_depth=1.0,
+        ),
+        output_root=tmp_path / "pid_without_baseline",
+        client_factory=CountingClient,
+    )
+    assert CountingClient.created == 1
+    assert result["config"]["run_baseline"] is False
+    assert result["baseline_rmse_h1_at_raw_observations"] is None
+    assert result["baseline_rmse_h1_tracking_target"] is None
+    assert Path(result["output_plot"]).is_file()
+    rows = list(csv.DictReader(Path(result["output_csv"]).open(encoding="utf-8-sig")))
+    assert all(row["h1_forecast"] == "" for row in rows)
+    assert all(row["q_boundary_dll_forecast"] == "" for row in rows)
+    assert all(row["h1_analysis"] != "" for row in rows)
 
 
 def test_rolling_nsga_fake_hydraulic_window(tmp_path: Path):

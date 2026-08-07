@@ -68,6 +68,7 @@ DIRECT_RUN_PID_ANTI_WINDUP_GAIN = 0.2
 DIRECT_RUN_PID_Q_MAX_STEP = 2.0
 DIRECT_RUN_FILTER_FLOW_OUTLIERS = False
 DIRECT_RUN_USE_DLL_FLOW_FEEDBACK = True
+DIRECT_RUN_PID_RUN_BASELINE = False
 
 
 __all__ = [
@@ -1872,6 +1873,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 initial_water_depth=DIRECT_RUN_INITIAL_WATER_DEPTH,
                 filter_flow_outliers=DIRECT_RUN_FILTER_FLOW_OUTLIERS,
                 use_dll_flow_feedback=DIRECT_RUN_USE_DLL_FLOW_FEEDBACK,
+                run_baseline=DIRECT_RUN_PID_RUN_BASELINE,
             ),
             output_root=case_path / "output" / "data_assimilation_direct_run",
             dll_path=TOOLS_DIR / "OcisMILPNet.dll",
