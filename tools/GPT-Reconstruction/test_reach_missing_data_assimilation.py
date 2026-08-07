@@ -54,6 +54,10 @@ class FakeClient:
         return "{}"
 
 
+class NaNClient(FakeClient):
+    def check_nan_sim(self): return True
+
+
 def write_wide(path: Path, header: list[str], rows: list[list[object]]):
     with path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
@@ -68,7 +72,7 @@ def make_case(tmp_path: Path) -> Path:
     (case / "OCIS_dataConfig.json").write_text(json.dumps({
         "selected_model": "SIMMODEL",
         "SIMMODEL": {"case_name": "case", "dirpath": "../"},
-        "SIM": {},
+        "SIM": {"boundary_stage_path": "/input/stage1_td.csv"},
     }), encoding="utf-8")
     write_wide(case / "mesh" / "edges.csv", ["id", "source", "target", "type", "canal"], [[0, "上游闸", "目标闸", "canal", "测试渠"]])
     write_wide(case / "input" / "action.csv", ["tm", "d0", "目标闸"], [
@@ -206,6 +210,42 @@ def test_parallel_pid_rejects_missing_model_object_or_initial_flow():
     assert inventory[1]["initial_boundary_flow"] == 3.0
 
 
+def test_parallel_pid_writes_complete_reconstructed_action(tmp_path: Path):
+    source = tmp_path / "action.csv"
+    pid_csv = tmp_path / "pid.csv"
+    output = tmp_path / "action_reconstruction.csv"
+    write_wide(
+        source,
+        ["tm", "d0", "inflow0", "目标闸"],
+        [
+            ["2026/01/01 00:00", 2.0, 10.0, 8.0],
+            ["2026/01/01 02:00", 4.0, 14.0, 12.0],
+        ],
+    )
+    write_wide(
+        pid_csv,
+        ["time", "q_boundary_analysis"],
+        [
+            ["2026/01/01 00:00:00", 2.5],
+            ["2026/01/01 01:00:00", 3.5],
+            ["2026/01/01 02:00:00", 4.5],
+        ],
+    )
+    reach = da.ReachSpec(0, "上游闸", "目标闸", "上游闸", "d0", "测试渠段")
+    result_path = parallel_pid.write_action_reconstruction(
+        source,
+        output,
+        [{"status": "success", "pool_id": 0, "output_csv": str(pid_csv)}],
+        [reach],
+    )
+    rows = list(csv.DictReader(result_path.open(encoding="utf-8-sig")))
+    assert list(rows[0]) == ["tm", "d0", "inflow0", "目标闸"]
+    assert len(rows) == 3
+    assert float(rows[1]["d0"]) == 3.5
+    assert float(rows[1]["inflow0"]) == 12.0
+    assert float(rows[1]["目标闸"]) == 10.0
+
+
 def test_plot_marks_only_isolated_measured_flow_spike():
     values = [20.0, 21.0, 22.0, 23.0, 100.0, 24.0, 25.0, 30.0, 35.0]
     normal, outliers = enkf_plotting._split_isolated_outliers(values)
@@ -243,6 +283,7 @@ def test_pid_fake_hydraulic_hourly_tracking(tmp_path: Path):
         client_factory=FakeClient,
     )
     assert result["method"] == "hourly PID"
+    assert Path(result["observation_files"]["gate_h1"]).name == "stage1_td.csv"
     assert Path(result["output_csv"]).exists()
     assert Path(result["output_plot"]).exists()
     rows = list(csv.DictReader(Path(result["output_csv"]).open(encoding="utf-8-sig")))
@@ -253,6 +294,18 @@ def test_pid_fake_hydraulic_hourly_tracking(tmp_path: Path):
     assert float(rows[1]["q_boundary_dll_analysis"]) == float(rows[1]["q_boundary_analysis"])
     assert float(rows[1]["q_boundary_execution_error"]) == 0.0
     assert float(rows[1]["h1_control_target"]) == float(rows[1]["h1_obs"])
+
+
+def test_pid_stops_when_hydraulic_dll_reports_nan(tmp_path: Path):
+    case = make_case(tmp_path)
+    with pytest.raises(da.AssimilationError, match="第 0 步基准水动力计算出现 NaN"):
+        pid_reconstruction.run_pid_reconstruction(
+            case,
+            da.discover_reaches(case)[0],
+            config=pid_reconstruction.PIDConfig(steps=1),
+            output_root=tmp_path / "pid_nan",
+            client_factory=NaNClient,
+        )
 
 
 def test_rolling_nsga_fake_hydraulic_window(tmp_path: Path):

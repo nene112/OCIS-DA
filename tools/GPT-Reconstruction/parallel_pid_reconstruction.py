@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -38,6 +39,7 @@ PROJECT_DIR = TOOLS_DIR.parent
 CASE_PATH = PROJECT_DIR / "data" / CASE_NAME
 DLL_PATH = TOOLS_DIR / "OcisMILPNet.dll"
 OUTPUT_ROOT = CASE_PATH / "output" / "pid_parallel_reconstruction"
+ACTION_SOURCE = CASE_PATH / "input" / "action.csv"
 
 
 def select_reaches_with_water_levels(
@@ -112,6 +114,92 @@ def _format_time(value: datetime) -> str:
     return value.strftime("%Y-%m-%d %H:%M:%S")
 
 
+def write_action_reconstruction(
+    source_path: str | Path,
+    output_path: str | Path,
+    results: list[dict[str, Any]],
+    reaches: list[da.ReachSpec],
+) -> Path:
+    source = Path(source_path).resolve()
+    output = Path(output_path).resolve()
+    if not source.is_file():
+        raise FileNotFoundError(f"基础边界条件文件不存在: {source}")
+
+    source_rows = list(csv.reader(da._read_text(source).splitlines()))
+    if not source_rows or len(source_rows[0]) < 2:
+        raise da.AssimilationError(f"基础边界条件文件格式无效: {source}")
+    header = [name.strip() for name in source_rows[0]]
+    while header and not header[-1]:
+        header.pop()
+    if not header or da._normalize_name(header[0]) not in {"tm", "time", "datetime"}:
+        raise da.AssimilationError("action.csv 第一列必须是时间列")
+
+    source_series: dict[str, da.ObservationSeries] = {}
+    for column_index, name in enumerate(header[1:], start=1):
+        values: list[tuple[datetime, float]] = []
+        for row in source_rows[1:]:
+            timestamp = da._parse_datetime(row[0] if row else None)
+            value = da._finite_float(row[column_index] if column_index < len(row) else None)
+            if timestamp is not None and value is not None:
+                values.append((timestamp, value))
+        source_series[name] = da.ObservationSeries(values)
+
+    successful = {
+        int(result["pool_id"]): result
+        for result in results
+        if result.get("status") == "success" and result.get("output_csv")
+    }
+    if not successful:
+        raise da.AssimilationError("没有成功的渠段结果，无法生成重构边界条件")
+
+    reconstructed: dict[str, dict[datetime, float]] = {}
+    timeline: list[datetime] | None = None
+    reach_by_pool = {reach.pool_id: reach.normalized() for reach in reaches}
+    for pool_id, result in successful.items():
+        reach = reach_by_pool.get(pool_id)
+        if reach is None:
+            continue
+        boundary_name = reach.boundary_model_name
+        if boundary_name not in header:
+            raise da.AssimilationError(
+                f"action.csv 缺少重构边界列 {boundary_name}（渠段 {pool_id}）"
+            )
+        values: dict[datetime, float] = {}
+        with Path(result["output_csv"]).open(encoding="utf-8-sig", newline="") as stream:
+            for row in csv.DictReader(stream):
+                timestamp = da._parse_datetime(row.get("time"))
+                value = da._finite_float(row.get("q_boundary_analysis"))
+                if timestamp is not None and value is not None:
+                    values[timestamp] = value
+        if not values:
+            raise da.AssimilationError(f"渠段 {pool_id} 没有有效的PID重构分水结果")
+        current_timeline = sorted(values)
+        if timeline is None:
+            timeline = current_timeline
+        elif current_timeline != timeline:
+            raise da.AssimilationError(f"渠段 {pool_id} 的PID结果时间轴不一致")
+        reconstructed[boundary_name] = values
+
+    if not timeline:
+        raise da.AssimilationError("PID结果缺少有效时间轴")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("w", encoding="utf-8-sig", newline="") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(header)
+        for timestamp in timeline:
+            output_row: list[Any] = [_format_time(timestamp)]
+            for name in header[1:]:
+                if name in reconstructed:
+                    value = reconstructed[name][timestamp]
+                else:
+                    value = source_series[name].value_at(
+                        timestamp, 366 * 24 * 3600, "linear"
+                    )
+                output_row.append("" if value is None else value)
+            writer.writerow(output_row)
+    return output
+
+
 def _worker(payload: dict[str, Any]) -> dict[str, Any]:
     reach = da.ReachSpec(**payload["reach"])
     try:
@@ -180,12 +268,14 @@ def run_parallel_pid() -> dict[str, Any]:
     boundary_path = da._resolve_config_data_path(
         config_path, case_path, "SIM", "boundary_flow_path"
     )
-    stage_path = case_path / "input" / "stage.csv"
+    stage_path = da._resolve_config_data_path(
+        config_path, case_path, "SIM", "boundary_stage_path"
+    )
     files = da._resolve_observation_files(
         case_path,
         da.ObservationFiles(
             boundary_flow=boundary_path,
-            gate_h1=stage_path if stage_path.is_file() else None,
+            gate_h1=stage_path,
         ),
     )
     gate_h1 = da.load_observation_csv(files.gate_h1)
@@ -204,6 +294,8 @@ def run_parallel_pid() -> dict[str, Any]:
     )
     workers = _worker_count(len(selected), MAX_WORKERS)
     output_root.mkdir(parents=True, exist_ok=True)
+    action_output_path = output_root / "action_reconstruction.csv"
+    action_output_path.unlink(missing_ok=True)
 
     payloads = [
         {
@@ -241,6 +333,15 @@ def run_parallel_pid() -> dict[str, Any]:
                     )
     results.sort(key=lambda item: int(item.get("pool_id", -1)))
 
+    action_reconstruction_path: Path | None = None
+    if any(item["status"] == "success" for item in results):
+        action_reconstruction_path = write_action_reconstruction(
+            ACTION_SOURCE,
+            action_output_path,
+            results,
+            reaches,
+        )
+
     report = {
         "case_path": str(case_path),
         "water_level_file": str(files.gate_h1) if files.gate_h1 else None,
@@ -251,6 +352,10 @@ def run_parallel_pid() -> dict[str, Any]:
         "selected_count": len(selected),
         "success_count": sum(item["status"] == "success" for item in results),
         "failed_count": sum(item["status"] == "failed" for item in results),
+        "action_source": str(ACTION_SOURCE.resolve()),
+        "action_reconstruction": (
+            str(action_reconstruction_path) if action_reconstruction_path else None
+        ),
         "reach_inventory": inventory,
         "results": results,
     }
@@ -270,6 +375,8 @@ def main() -> int:
     )
     print(f"RESULT_REPORT={report['report_path']}")
     print(f"RESULT_DIR={report['output_root']}")
+    if report["action_reconstruction"]:
+        print(f"RESULT_ACTION={report['action_reconstruction']}")
     for result in report["results"]:
         if result["status"] == "failed":
             print(f"FAILED pool={result['pool_id']} {result['segment']}: {result['error']}")

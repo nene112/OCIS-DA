@@ -170,12 +170,14 @@ def run_pid_reconstruction(
     boundary_path = da._resolve_config_data_path(
         config_path, case_dir, "SIM", "boundary_flow_path"
     )
-    stage_path = case_dir / "input" / "stage.csv"
+    stage_path = da._resolve_config_data_path(
+        config_path, case_dir, "SIM", "boundary_stage_path"
+    )
     files = da._resolve_observation_files(
         case_dir,
         da.ObservationFiles(
             boundary_flow=boundary_path,
-            gate_h1=stage_path if stage_path.is_file() else None,
+            gate_h1=stage_path,
         ),
     )
     raw_observations = da._load_observation_bundle(files)
@@ -280,6 +282,14 @@ def run_pid_reconstruction(
                     config.initial_uef,
                 )
                 client.stepSolver_sim_Roe_only_pool(step, reach.pool_id)
+                try:
+                    if client.check_nan_sim():
+                        trajectory = "基准" if client is baseline_client else "PID"
+                        raise da.AssimilationError(
+                            f"渠段 {reach.pool_id} 第 {step} 步{trajectory}水动力计算出现 NaN"
+                        )
+                except AttributeError:
+                    pass
                 q_data = da._safe_model_data(client, "gates_Q")
                 upstream_q = (
                     da._extract_gate_value(q_data, upstream_gate_id)
