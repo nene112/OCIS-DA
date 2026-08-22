@@ -50,7 +50,7 @@ import enkf_plotting
 
 # 直接点击运行本文件时使用的最小案例参数。
 DIRECT_RUN_CASE_NAME = "sj_zonggan-d0"
-DIRECT_RUN_REACH_INDEX = 5
+DIRECT_RUN_REACH_INDEX = 6
 DIRECT_RUN_STEPS = 720
 DIRECT_RUN_ENSEMBLE_SIZE = 6
 DIRECT_RUN_INITIAL_WATER_DEPTH = 2.2
@@ -65,7 +65,7 @@ DIRECT_RUN_PID_KI = 2.0
 DIRECT_RUN_PID_KD = 0.0
 DIRECT_RUN_PID_INTEGRAL_LIMIT = 150.0
 DIRECT_RUN_PID_ANTI_WINDUP_GAIN = 0.2
-DIRECT_RUN_PID_Q_MAX_STEP = 2.0
+DIRECT_RUN_PID_Q_MAX_STEP = 20.0
 DIRECT_RUN_FILTER_FLOW_OUTLIERS = False
 DIRECT_RUN_USE_DLL_FLOW_FEEDBACK = True
 DIRECT_RUN_PID_RUN_BASELINE = False
@@ -196,7 +196,9 @@ class AssimilationConfig:
     initial_uef: float = 0.60
     initial_water_depth: float | None = 2.0
     initialize_h1_from_observation: bool = True
-    initial_bed_level: float | None = 0.0
+    # Keep the bed elevations loaded from the case/DLL unless the caller
+    # explicitly requests an artificial uniform bed level.
+    initial_bed_level: float | None = None
     sim_solver_type: str = "sediment"
 
     # 观测匹配。nearest 保持原脚本行为；causal 不使用未来观测。
@@ -1196,6 +1198,10 @@ def _write_rows_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
         "upstream_gate_name",
         "target_gate_name",
         "boundary_name",
+        "boundary_model_name",
+        "upstream_gate_id",
+        "target_gate_id",
+        "boundary_gate_id",
         "used_observations",
         "q_boundary_obs",
         "q_boundary_forecast",
@@ -1230,9 +1236,28 @@ def _write_rows_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
         "uef_forecast",
         "uef_analysis",
         "pid_error",
+        "pid_raw_error",
+        "pid_water_level_bias",
+        "h1_analysis_bias_corrected",
         "pid_correction",
         "pid_integral",
         "pid_derivative",
+        "pid_kp",
+        "pid_ki",
+        "pid_kd",
+        "pid_safety_mode",
+        "pid_water_level_step",
+        "pid_q_max",
+        "downstream_gate_diversion_q_max",
+        "downstream_gate_diversion_constraint_active",
+        "flow_tracking_target_h1",
+        "flow_tracking_selected_h1",
+        "flow_tracking_abs_error",
+        "flow_tracking_reachable",
+        "flow_tracking_trials",
+        "flow_tracking_q_min",
+        "flow_tracking_q_max",
+        "flow_tracking_downstream_gate_q_max",
         "pid_anti_windup",
     ]
     with path.open("w", encoding="utf-8-sig", newline="") as stream:
@@ -1859,21 +1884,66 @@ def main(argv: Sequence[str] | None = None) -> int:
         from pid_reconstruction import PIDConfig, run_pid_reconstruction
 
         reach = discover_reaches(case_path)[DIRECT_RUN_REACH_INDEX]
+        pid_parameters: dict[str, Any] = {
+            "kp": DIRECT_RUN_PID_KP,
+            "ki": DIRECT_RUN_PID_KI,
+            "q_max_step": DIRECT_RUN_PID_Q_MAX_STEP,
+            "adaptive_gains": False,
+        }
+        tuning_path = (
+            case_path
+            / "output"
+            / "pid_nsga2_tuning"
+            / str(reach.pool_id)
+            / "tuning_summary.json"
+        )
+        parameter_source = "DIRECT_RUN_DEFAULT"
+        if tuning_path.is_file():
+            tuning = json.loads(tuning_path.read_text(encoding="utf-8"))
+            selected = tuning.get("selected_parameters", {})
+            tuned_values = {
+                "kp": _finite_float(selected.get("kp")),
+                "ki": _finite_float(selected.get("ki")),
+                "q_max": _finite_float(selected.get("q_max")),
+                "q_max_step": _finite_float(
+                    tuning.get("config", {}).get("q_max_step")
+                ),
+            }
+            if (
+                not tuning.get("final_error")
+                and all(value is not None for value in tuned_values.values())
+                and tuned_values["kp"] >= 0.0
+                and tuned_values["ki"] >= 0.0
+                and tuned_values["q_max"] > 0.0
+                and tuned_values["q_max_step"] > 0.0
+            ):
+                pid_parameters.update(tuned_values)
+                pid_parameters["adaptive_gains"] = True
+                parameter_source = str(tuning_path.resolve())
+        print(
+            f"PID_PARAMETERS pool={reach.pool_id} source={parameter_source} "
+            f"kp={pid_parameters['kp']} ki={pid_parameters['ki']} "
+            f"q_max={pid_parameters.get('q_max')} "
+            f"q_max_step={pid_parameters['q_max_step']} "
+            f"adaptive={pid_parameters['adaptive_gains']}"
+        )
         result = run_pid_reconstruction(
             case_path,
             reach,
             config=PIDConfig(
                 steps=DIRECT_RUN_STEPS,
-                kp=DIRECT_RUN_PID_KP,
-                ki=DIRECT_RUN_PID_KI,
+                kp=pid_parameters["kp"],
+                ki=pid_parameters["ki"],
                 kd=DIRECT_RUN_PID_KD,
                 integral_limit=DIRECT_RUN_PID_INTEGRAL_LIMIT,
                 anti_windup_gain=DIRECT_RUN_PID_ANTI_WINDUP_GAIN,
-                q_max_step=DIRECT_RUN_PID_Q_MAX_STEP,
+                q_max=pid_parameters.get("q_max"),
+                q_max_step=pid_parameters["q_max_step"],
                 initial_water_depth=DIRECT_RUN_INITIAL_WATER_DEPTH,
                 filter_flow_outliers=DIRECT_RUN_FILTER_FLOW_OUTLIERS,
                 use_dll_flow_feedback=DIRECT_RUN_USE_DLL_FLOW_FEEDBACK,
                 run_baseline=DIRECT_RUN_PID_RUN_BASELINE,
+                adaptive_gains=pid_parameters["adaptive_gains"],
             ),
             output_root=case_path / "output" / "data_assimilation_direct_run",
             dll_path=TOOLS_DIR / "OcisMILPNet.dll",
