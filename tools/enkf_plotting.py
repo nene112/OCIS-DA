@@ -7,6 +7,7 @@ import matplotlib
 import numpy as np
 
 matplotlib.use("Agg")
+from matplotlib import font_manager
 import matplotlib.pyplot as plt
 
 
@@ -53,6 +54,12 @@ def write_reconstruction_png(
 ) -> Path:
     """绘制水位、分水流量以及渠段进出流量与净流量。"""
 
+    for font_path in (r"C:\Windows\Fonts\msyh.ttc", r"C:\Windows\Fonts\simhei.ttf"):
+        try:
+            font_manager.fontManager.addfont(font_path)
+        except Exception:
+            pass
+    plt.rcParams["font.family"] = "sans-serif"
     plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "Noto Sans CJK SC", "DejaVu Sans"]
     plt.rcParams["axes.unicode_minus"] = False
     x = list(range(len(rows)))
@@ -75,22 +82,40 @@ def write_reconstruction_png(
 
     stage_ax = axes[0]
     if show_baseline:
-        stage_ax.plot(x, series("h1_forecast"), color="#2563eb", linewidth=1.8, label="基准模拟水位")
-    stage_ax.plot(x, series("h1_analysis"), color="#16a34a", linewidth=1.9, label="分析后水位")
+        stage_ax.plot(
+            x,
+            series("h1_forecast"),
+            color="#2563eb",
+            linewidth=1.8,
+            linestyle="--",
+            label="模拟值：水位",
+        )
+    stage_ax.plot(
+        x,
+        series("h1_analysis"),
+        color="#16a34a",
+        linewidth=1.9,
+        linestyle="--",
+        label="分析值：水位",
+    )
     if any(row.get("h1_control_target") not in (None, "") for row in rows):
         stage_ax.plot(
             x,
             series("h1_control_target"),
             color="#f59e0b",
-            linewidth=1.5,
-            linestyle="--",
-            label="PID线性插值目标",
+            linewidth=1.6,
+            linestyle="-",
+            label="设定值：目标水位",
         )
-    stage_ax.scatter(x, series("h1_obs"), color="#dc2626", s=20, label="实测水位", zorder=4)
+    stage_ax.scatter(x, series("h1_obs"), color="#dc2626", s=20, label="实测值：水位", zorder=4)
     stage_ax.set_ylabel("水位 (m)")
     stage_ax.set_title(f"{segment_name} 水位同化过程", loc="left")
     stage_ax.grid(True, color="#e2e8f0", linewidth=0.8)
-    stage_ax.legend(loc="best")
+    stage_ax.legend(
+        loc="best",
+        title="实线=设定值 · 虚线=模拟值/分析值 · 散点=实测值",
+        title_fontsize=9,
+    )
 
     flow_ax = axes[1]
     boundary_values = series("q_boundary_obs")
@@ -99,8 +124,20 @@ def write_reconstruction_png(
         if mark_flow_outliers
         else (boundary_values, [np.nan] * len(rows))
     )
-    flow_ax.plot(x, series("q_boundary_forecast"), color="#64748b", linewidth=1.6, label="原始设定分水流量")
-    flow_ax.plot(x, series("q_boundary_analysis"), color="#16a34a", linewidth=1.9, label="PID设定分水流量")
+    flow_ax.plot(
+        x,
+        series("q_boundary_forecast"),
+        color="#64748b",
+        linewidth=1.6,
+        label="设定：分水流量（原始）",
+    )
+    flow_ax.plot(
+        x,
+        series("q_boundary_analysis"),
+        color="#16a34a",
+        linewidth=1.9,
+        label="设定：分水流量（PID）",
+    )
     if show_baseline and any(row.get("q_boundary_dll_forecast") not in (None, "") for row in rows):
         flow_ax.plot(
             x,
@@ -108,7 +145,7 @@ def write_reconstruction_png(
             color="#2563eb",
             linewidth=1.5,
             linestyle="--",
-            label="DLL回读分水流量（原始工况）",
+            label="模拟：分水流量（DLL·基准）",
         )
     if any(row.get("q_boundary_dll_analysis") not in (None, "") for row in rows):
         flow_ax.plot(
@@ -117,9 +154,9 @@ def write_reconstruction_png(
             color="#f59e0b",
             linewidth=1.7,
             linestyle="--",
-            label="DLL回读分水流量（PID工况）",
+            label="模拟：分水流量（DLL·PID）",
         )
-    flow_ax.scatter(x, boundary_obs, color="#dc2626", s=20, label="原分水流量", zorder=4)
+    flow_ax.scatter(x, boundary_obs, color="#dc2626", s=20, label="实测：分水流量", zorder=4)
     if mark_flow_outliers:
         flow_ax.scatter(
             x,
@@ -128,13 +165,17 @@ def write_reconstruction_png(
             marker="x",
             s=64,
             linewidths=1.8,
-            label="分水流量异常值（忽略）",
+            label="实测：分水流量异常值（忽略）",
             zorder=6,
         )
     flow_ax.set_ylabel("流量")
     flow_ax.set_title("分水流量调整过程", loc="left")
     flow_ax.grid(True, color="#e2e8f0", linewidth=0.8)
-    flow_ax.legend(loc="best")
+    flow_ax.legend(
+        loc="best",
+        title="实线=设定值 · 虚线=模拟值/分析值 · 散点=实测值",
+        title_fontsize=9,
+    )
 
     reach_flow_ax = axes[2]
     downstream_values = series("gate_q_obs")
@@ -150,9 +191,27 @@ def write_reconstruction_png(
         series("q_boundary_analysis"),
         color="#1f2937",
         linewidth=1.6,
-        linestyle=(0, (4, 2)),
-        label="边界给定流量",
+        linestyle="-",
+        label="设定：边界给定流量",
     )
+    if show_baseline and any(row.get("q_boundary_dll_forecast") not in (None, "") for row in rows):
+        reach_flow_ax.plot(
+            x,
+            series("q_boundary_dll_forecast"),
+            color="#2563eb",
+            linewidth=1.5,
+            linestyle=":",
+            label="DLL反馈：分水流量（基准）",
+        )
+    if any(row.get("q_boundary_dll_analysis") not in (None, "") for row in rows):
+        reach_flow_ax.plot(
+            x,
+            series("q_boundary_dll_analysis"),
+            color="#f59e0b",
+            linewidth=1.7,
+            linestyle=":",
+            label="DLL反馈：分水流量（PID）",
+        )
     simulation_suffix = "forecast" if show_baseline else "analysis"
     simulation_label = "基准" if show_baseline else "PID"
     reach_flow_ax.plot(
@@ -160,7 +219,8 @@ def write_reconstruction_png(
         series(f"upstream_gate_q_{simulation_suffix}"),
         color="#0f766e",
         linewidth=2.0,
-        label=f"上游闸{simulation_label}模拟流量",
+        linestyle="--",
+        label=f"模拟：上游闸流量（{simulation_label}）",
     )
     reach_flow_ax.scatter(
         x,
@@ -170,7 +230,7 @@ def write_reconstruction_png(
         s=34,
         edgecolors="white",
         linewidths=0.7,
-        label="上游闸实测流量",
+        label="实测：上游闸流量",
         zorder=5,
     )
     if mark_flow_outliers:
@@ -181,7 +241,7 @@ def write_reconstruction_png(
             marker="x",
             s=64,
             linewidths=1.8,
-            label="上游闸实测异常值（忽略）",
+            label="实测：上游闸异常值（忽略）",
             zorder=6,
         )
     reach_flow_ax.plot(
@@ -189,7 +249,8 @@ def write_reconstruction_png(
         series(f"gate_q_{simulation_suffix}"),
         color="#b91c1c",
         linewidth=2.0,
-        label=f"下游闸{simulation_label}模拟流量",
+        linestyle="--",
+        label=f"模拟：下游闸流量（{simulation_label}）",
     )
     reach_flow_ax.scatter(
         x,
@@ -199,7 +260,7 @@ def write_reconstruction_png(
         s=34,
         edgecolors="white",
         linewidths=0.7,
-        label="下游闸实测流量",
+        label="实测：下游闸流量",
         zorder=5,
     )
     if mark_flow_outliers:
@@ -210,7 +271,7 @@ def write_reconstruction_png(
             marker="x",
             s=64,
             linewidths=1.8,
-            label="下游闸实测异常值（忽略）",
+            label="实测：下游闸异常值（忽略）",
             zorder=6,
         )
     reach_flow_ax.plot(
@@ -218,14 +279,19 @@ def write_reconstruction_png(
         series(f"net_gate_q_{simulation_suffix}"),
         color="#7c3aed",
         linewidth=2.2,
-        linestyle="-.",
-        label=f"{simulation_label}渠段净流量（入正出负）",
+        linestyle="--",
+        label=f"模拟：渠段净流量（{simulation_label}，入正出负）",
     )
     reach_flow_ax.set_xlabel("时间步")
     reach_flow_ax.set_ylabel("流量")
     reach_flow_ax.set_title(f"{segment_name} 关键流量过程", loc="left")
     reach_flow_ax.grid(True, color="#e2e8f0", linewidth=0.8)
-    reach_flow_ax.legend(loc="best", ncol=3)
+    reach_flow_ax.legend(
+        loc="best",
+        ncol=3,
+        title="实线=设定值 · 虚线=模拟值/分析值 · 散点=实测值",
+        title_fontsize=9,
+    )
 
     if rows:
         tick_idx = sorted({0, len(rows) // 4, len(rows) // 2, 3 * len(rows) // 4, len(rows) - 1})
