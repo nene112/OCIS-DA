@@ -54,6 +54,34 @@ class PIDConfig:
     flow_tracking_max_trials: int = 8
     flow_tracking_strict: bool = True
     enforce_diversion_not_above_downstream_gate: bool = True
+    # 节制闸（目标闸）调节：当分水无法改善水位时启用。
+    # 本模型分池段运行时，节制闸由“闸门流量”边界驱动（开度 e 为反推值，
+    # set_GatesFlow_e_byID_sim 对 h1 无影响），故以目标闸流量作为调节量。
+    check_gate_enabled: bool = False
+    # 节制闸流量动作幅度上限，按 [check_gate_flow_min, check_gate_flow_max]
+    # 全量程的百分比逐级递增（10%、20%、30%...）。
+    check_gate_amplitude_start: float = 0.10
+    check_gate_amplitude_step: float = 0.10
+    check_gate_amplitude_max: float = 1.0
+    check_gate_flow_min: float = 0.0
+    check_gate_flow_max: float = 30.0
+    # 依据目标闸实测流量自动扩界节制闸流量范围（流量上界 = 实测最大流量 × (1+margin)）。
+    check_gate_flow_auto_range: bool = False
+    check_gate_flow_range_margin: float = 0.10
+    # 节制闸流量一维扫描网格点数（在分水最优处固定分水，扫节制闸流量）。
+    check_gate_search_points: int = 11
+    # 节制闸（目标闸）控制量类型：
+    #   "flow"    —— 闸门流量边界（sj_zonggan-d0 等），用 set_GatesFlow_byID_sim。
+    #   "opening" —— 闸门开度 e 边界（dayudu 等），用 set_GatesFlow_e_byID_sim。
+    # dayudu 多个节制闸是“开度”边界：开度直接经孔口/堰流公式改变过闸流量与闸前水位。
+    check_gate_mode: str = "flow"
+    # opening 模式下的开度搜索范围（米）。开度观测值（gate_e_td.csv）通常为 mm。
+    check_gate_opening_min: float = 0.0
+    check_gate_opening_max: float = 1.5
+    check_gate_opening_obs_unit: str = "mm"  # "mm" 或 "m"
+    # 依据目标闸实测开度自动扩界开度范围（上界 = 实测最大开度 × (1+margin)）。
+    check_gate_opening_auto_range: bool = False
+    check_gate_opening_range_margin: float = 0.10
 
     def validate(self) -> None:
         if self.steps <= 0:
@@ -97,6 +125,21 @@ class PIDConfig:
             raise ValueError("flow_tracking_tolerance 必须大于 0")
         if self.flow_tracking_max_trials < 1:
             raise ValueError("flow_tracking_max_trials 必须至少为 1")
+        if not 0.0 <= self.check_gate_amplitude_start <= self.check_gate_amplitude_max <= 1.0:
+            raise ValueError("节制闸幅度需满足 0 <= start <= max <= 1")
+        if self.check_gate_amplitude_step <= 0.0:
+            raise ValueError("check_gate_amplitude_step 必须大于 0")
+        if not 0.0 <= self.check_gate_flow_min < self.check_gate_flow_max:
+            raise ValueError("节制闸流量范围需满足 0 <= flow_min < flow_max")
+        if self.check_gate_search_points < 3:
+            raise ValueError("check_gate_search_points 必须至少为 3")
+        if self.check_gate_mode not in ("flow", "opening"):
+            raise ValueError("check_gate_mode 只能是 'flow' 或 'opening'")
+        if self.check_gate_mode == "opening":
+            if not 0.0 <= self.check_gate_opening_min < self.check_gate_opening_max:
+                raise ValueError("节制闸开度范围需满足 0 <= opening_min < opening_max")
+            if self.check_gate_opening_obs_unit not in ("mm", "m"):
+                raise ValueError("check_gate_opening_obs_unit 只能是 'mm' 或 'm'")
 
 
 class PIDController:
@@ -303,6 +346,155 @@ def _select_flow_by_one_step_trials(
         client.set_states(str(state_path))
 
 
+def _opening_to_m(value: float, unit: str) -> float:
+    """把开度观测值换算成米（DLL 开度单位）。"""
+    number = float(value)
+    return number / 1000.0 if unit == "mm" else number
+
+
+def _set_check_gate_control(client: Any, gate_id: str | int, value: float, mode: str) -> None:
+    """按控制量类型设置节制闸（目标闸）边界。"""
+    if mode == "opening":
+        client.set_GatesFlow_e_byID_sim(int(gate_id), float(value))
+    else:
+        client.set_GatesFlow_byID_sim(int(gate_id), float(value))
+
+
+def _select_flow_and_gate_by_one_step_trials(
+    client: Any,
+    *,
+    state_path: Path,
+    step: int,
+    pool_id: int,
+    boundary_gate_id: str | int,
+    target_gate_id: str | int,
+    check_gate_id: str | int | None,
+    target_h1: float,
+    q_min: float,
+    q_max: float,
+    tolerance: float,
+    max_trials: int,
+    current_q_gate: float,
+    amplitude_start: float,
+    amplitude_step: float,
+    amplitude_max: float,
+    flow_min: float,
+    flow_max: float,
+    search_points: int,
+    mode: str = "flow",
+) -> tuple[float, float, dict[str, Any]]:
+    """Find (diversion flow, check-gate control) via reversible one-step trials.
+
+    第一阶段先单独调分水（节制闸控制量保持 current_q_gate），用二分法逼近目标
+    水深；若分水无法把误差降到容差以内，则第二阶段开始调节制闸（目标闸）：
+    动作幅度上限按 [flow_min, flow_max] 全量程的百分比逐级递增（10%→20%→30%…），
+    每级在当前控制量 ± 幅度 的窗口内选取最接近目标的控制量，仍无法改善（误差
+    未达标）就继续加大幅度，直到达标或达到上限。
+
+    mode="flow" 时控制量为节制闸流量（set_GatesFlow_byID_sim）；
+    mode="opening" 时控制量为节制闸开度 e（set_GatesFlow_e_byID_sim）。
+    """
+    client.save_states(str(state_path))
+
+    def trial(q_value: float, q_gate: float) -> float:
+        client.set_states(str(state_path))
+        client.update_BC_sim_only(step)
+        client.set_GatesFlow_byID_sim(boundary_gate_id, float(q_value))
+        if check_gate_id is not None:
+            _set_check_gate_control(client, check_gate_id, q_gate, mode)
+        client.stepSolver_sim_Roe_only_pool(step, pool_id)
+        h1 = da._extract_gate_value(
+            da._safe_model_data(client, "gates_h1"), target_gate_id
+        )
+        if h1 is None:
+            raise da.AssimilationError(f"试算第 {step} 步未返回目标闸水位")
+        return float(h1)
+
+    try:
+        # ---- 第一阶段：仅调分水（节制闸流量 = current_q_gate）----
+        low, high = float(q_min), float(q_max)
+        h_low, h_high = trial(low, current_q_gate), trial(high, current_q_gate)
+        candidates = [
+            (abs(h_low - target_h1), low, current_q_gate, h_low),
+            (abs(h_high - target_h1), high, current_q_gate, h_high),
+        ]
+        bracketed = (h_low - target_h1) * (h_high - target_h1) <= 0.0
+        if bracketed:
+            for _ in range(max_trials):
+                mid = 0.5 * (low + high)
+                h_mid = trial(mid, current_q_gate)
+                candidates.append((abs(h_mid - target_h1), mid, current_q_gate, h_mid))
+                if abs(h_mid - target_h1) <= tolerance:
+                    break
+                if (h_low - target_h1) * (h_mid - target_h1) <= 0.0:
+                    high, h_high = mid, h_mid
+                else:
+                    low, h_low = mid, h_mid
+        error, best_q, best_q_gate, best_h = min(candidates, key=lambda item: item[0])
+
+        # ---- 第二阶段：分水无法改善时，逐级调节制闸流量 ----
+        amplitude_used = 0.0
+        adjusted = False
+        diversion_only_error = error
+        check_gate_trials = 0
+        if error > tolerance and check_gate_id is not None:
+            # 固定分水在最优值，对节制闸流量全量程一次性扫网格，供逐级窗口挑选。
+            grid = np.linspace(flow_min, flow_max, int(search_points))
+            q_to_h: dict[float, float] = {float(current_q_gate): best_h}
+            for q_gate in grid:
+                key = round(float(q_gate), 9)
+                if key not in q_to_h:
+                    q_to_h[key] = trial(best_q, float(q_gate))
+                    check_gate_trials += 1
+            full_range = flow_max - flow_min
+            amplitude = float(amplitude_start)
+            while amplitude <= float(amplitude_max) + 1e-9:
+                window = amplitude * full_range
+                lo = max(flow_min, current_q_gate - window)
+                hi = min(flow_max, current_q_gate + window)
+                window_error = error
+                window_q_gate = best_q_gate
+                window_h = best_h
+                for q_gate, h_value in q_to_h.items():
+                    if lo - 1e-9 <= q_gate <= hi + 1e-9:
+                        candidate_error = abs(h_value - target_h1)
+                        if candidate_error < window_error:
+                            window_error = candidate_error
+                            window_q_gate = q_gate
+                            window_h = h_value
+                if window_error < error:
+                    error = window_error
+                    best_q_gate = window_q_gate
+                    best_h = window_h
+                    adjusted = True
+                amplitude_used = amplitude
+                if error <= tolerance:
+                    break
+                amplitude += amplitude_step
+        result = {
+            "flow_tracking_target_h1": float(target_h1),
+            "flow_tracking_selected_h1": float(best_h),
+            "flow_tracking_abs_error": float(error),
+            "flow_tracking_reachable": int(bracketed),
+            "flow_tracking_trials": len(candidates) + check_gate_trials,
+            "flow_tracking_q_min": float(q_min),
+            "flow_tracking_q_max": float(q_max),
+            "flow_tracking_diversion_only_error": float(diversion_only_error),
+            "check_gate_adjusted": int(adjusted),
+            "check_gate_amplitude_used": float(amplitude_used),
+            "check_gate_mode": mode,
+            "check_gate_current_flow": float(current_q_gate),
+            "check_gate_selected_flow": float(best_q_gate),
+        }
+        if mode == "opening":
+            result["check_gate_current_opening"] = float(current_q_gate)
+            result["check_gate_selected_opening"] = float(best_q_gate)
+        return float(best_q), float(best_q_gate), result
+    finally:
+        # The caller performs the selected controls as the one and only committed step.
+        client.set_states(str(state_path))
+
+
 def _resolve_downstream_q(
     dll_q: float | None,
     upstream_q: float | None,
@@ -394,25 +586,29 @@ def run_pid_reconstruction(
     output_root: str | Path | None = None,
     dll_path: str | Path | None = None,
     client_factory: Callable[[], Any] | None = None,
+    observation_files: da.ObservationFiles | None = None,
 ) -> dict[str, Any]:
     config = config or PIDConfig()
     config.validate()
     case_dir = Path(case_path).resolve()
     reach = reach.normalized()
     config_path = da._resolve_config_path(case_dir, None)
-    boundary_path = da._resolve_config_data_path(
-        config_path, case_dir, "SIM", "boundary_flow_path"
-    )
-    stage_path = da._resolve_config_data_path(
-        config_path, case_dir, "SIM", "boundary_stage_path"
-    )
-    files = da._resolve_observation_files(
-        case_dir,
-        da.ObservationFiles(
-            boundary_flow=boundary_path,
-            gate_h1=stage_path,
-        ),
-    )
+    if observation_files is not None:
+        files = da._resolve_observation_files(case_dir, observation_files)
+    else:
+        boundary_path = da._resolve_config_data_path(
+            config_path, case_dir, "SIM", "boundary_flow_path"
+        )
+        stage_path = da._resolve_config_data_path(
+            config_path, case_dir, "SIM", "boundary_stage_path"
+        )
+        files = da._resolve_observation_files(
+            case_dir,
+            da.ObservationFiles(
+                boundary_flow=boundary_path,
+                gate_h1=stage_path,
+            ),
+        )
     raw_observations = da._load_observation_bundle(files)
     raw_observations.gate_h1 = filter_valid_water_levels(
         raw_observations.gate_h1, config.minimum_valid_water_level
@@ -422,6 +618,40 @@ def run_pid_reconstruction(
         if config.filter_flow_outliers
         else raw_observations
     )
+    # 节制闸（目标闸）控制量范围：flow 模式为流量，opening 模式为开度（米）。
+    # 各渠段目标闸天然流量差异巨大（例如池 5 可达 120 m³/s，池 8 仅 32 m³/s），
+    # 固定上界会导致大流量渠段节制闸被钳制而壅水。
+    check_gate_mode = config.check_gate_mode
+    check_gate_flow_min = float(config.check_gate_flow_min)
+    check_gate_flow_max = float(config.check_gate_flow_max)
+    check_gate_opening_min = float(config.check_gate_opening_min)
+    check_gate_opening_max = float(config.check_gate_opening_max)
+    if config.check_gate_enabled and config.check_gate_flow_auto_range:
+        gate_q_series = observations.get("gate_flow", reach.target_gate_name)
+        gate_q_values = [
+            float(value)
+            for _, value in gate_q_series.values
+            if da._finite_float(value) is not None
+        ]
+        if gate_q_values:
+            check_gate_flow_min = max(0.0, min(check_gate_flow_min, min(gate_q_values)))
+            check_gate_flow_max = max(
+                check_gate_flow_max,
+                float(max(gate_q_values)) * (1.0 + config.check_gate_flow_range_margin),
+            )
+    if config.check_gate_enabled and config.check_gate_opening_auto_range:
+        gate_e_series = observations.get("gate_opening", reach.target_gate_name)
+        gate_e_values = [
+            _opening_to_m(value, config.check_gate_opening_obs_unit)
+            for _, value in gate_e_series.values
+            if da._finite_float(value) is not None and da._finite_float(value) >= 0.0
+        ]
+        if gate_e_values:
+            check_gate_opening_min = 0.0
+            check_gate_opening_max = max(
+                check_gate_opening_max,
+                float(max(gate_e_values)) * (1.0 + config.check_gate_opening_range_margin),
+            )
     hydraulic_config = da.AssimilationConfig(
         ensemble_size=3,
         steps=config.steps + 1,
@@ -485,6 +715,10 @@ def run_pid_reconstruction(
             return datetime.fromtimestamp(start_time.timestamp() + step * step_seconds)
 
         base_q = np.empty(profile_size, dtype=np.float64)
+        # 目标闸（节制闸）实测流量逐步序列，用于节制闸流量范围扩界与初始锚定。
+        gate_q_base = np.full(profile_size, np.nan, dtype=np.float64)
+        # 目标闸（节制闸）实测开度逐步序列（已换算为米），用于 opening 模式锚定。
+        gate_e_base = np.full(profile_size, np.nan, dtype=np.float64)
         targets: list[float | None] = []
         previous_q: float | None = None
         for step in range(profile_size):
@@ -498,6 +732,14 @@ def run_pid_reconstruction(
                 q_value = previous_q
             base_q[step] = float(q_value)
             previous_q = float(base_q[step])
+            gate_q_value = da._finite_float(obs["gate_q"])
+            if gate_q_value is not None:
+                gate_q_base[step] = float(gate_q_value)
+            gate_e_value = da._finite_float(obs["gate_opening"])
+            if gate_e_value is not None and gate_e_value >= 0.0:
+                gate_e_base[step] = _opening_to_m(
+                    gate_e_value, config.check_gate_opening_obs_unit
+                )
             targets.append(obs["h1"])
 
         initial_raw = da._collect_observations(
@@ -507,15 +749,54 @@ def run_pid_reconstruction(
             hydraulic_config,
             mode_override="exact",
         )
-        initial_h1 = initial_raw["h1"] or config.initial_water_depth
+        initial_h1 = (
+            targets[0]
+            or initial_raw["h1"]
+            or config.initial_water_depth
+        )
         for client in clients:
             try:
+                # 将整池初始水深对齐到首步实测水位，避免 config.initial_water_depth
+                # 与实测差异过大导致的长历时壅水/落水偏差（dayudu 实测 ~1.5m，
+                # 而默认 2.2m 会令模拟水位长期偏高达 ~0.7m）。
+                client.set_all_inih(float(initial_h1))
                 client.set_inih_1_byGates({int(target_gate_id): float(initial_h1)})
             except Exception:
                 client.set_all_inih(float(initial_h1))
 
         pid = PIDController(config, step_seconds / 3600.0)
         applied_q = np.clip(base_q, config.q_min, None)
+        # 节制闸（目标闸）控制量跟踪：初始值优先取实测值（第 0 步），其次读取
+        # 模型当前值，均不可得时退回范围下限。get_gates_Q / get_gates_e 在首次
+        # 求解前为空，若直接用下限(=0) 会把节制闸从第 0 步起闭死导致壅水。
+        check_gate_id = target_gate_id if config.check_gate_enabled else None
+        if check_gate_mode == "opening":
+            gate_control_min = check_gate_opening_min
+            gate_control_max = check_gate_opening_max
+            initial_gate_value = da._extract_gate_value(
+                da._safe_model_data(pid_client, "gates_e"), target_gate_id
+            )
+            observed_gate_0 = (
+                float(gate_e_base[0]) if np.isfinite(gate_e_base[0]) else None
+            )
+        else:
+            gate_control_min = check_gate_flow_min
+            gate_control_max = check_gate_flow_max
+            initial_gate_value = da._extract_gate_value(
+                da._safe_model_data(pid_client, "gates_Q"), target_gate_id
+            )
+            observed_gate_0 = (
+                float(gate_q_base[0]) if np.isfinite(gate_q_base[0]) else None
+            )
+        anchor_candidates = [
+            candidate
+            for candidate in (observed_gate_0, initial_gate_value)
+            if candidate is not None
+            and gate_control_min <= candidate <= gate_control_max
+        ]
+        applied_q_gate = float(
+            anchor_candidates[0] if anchor_candidates else gate_control_min
+        )
         baseline_raw_rmse_pairs: list[tuple[float, float]] = []
         raw_rmse_pairs: list[tuple[float, float]] = []
         baseline_tracking_pairs: list[tuple[float, float]] = []
@@ -578,19 +859,56 @@ def run_pid_reconstruction(
                     trial_q_max = float(config.q_max)
                     if downstream_constraint_q_max is not None:
                         trial_q_max = min(trial_q_max, downstream_constraint_q_max)
-                    q_value, flow_tracking = _select_flow_by_one_step_trials(
-                        client,
-                        state_path=trial_state_path,
-                        step=step,
-                        pool_id=reach.pool_id,
-                        boundary_gate_id=boundary_gate_id,
-                        target_gate_id=target_gate_id,
-                        target_h1=float(target),
-                        q_min=config.q_min,
-                        q_max=max(config.q_min, trial_q_max),
-                        tolerance=config.flow_tracking_tolerance,
-                        max_trials=config.flow_tracking_max_trials,
-                    )
+                    if config.check_gate_enabled:
+                        gate_flow_min = (
+                            check_gate_opening_min
+                            if check_gate_mode == "opening"
+                            else check_gate_flow_min
+                        )
+                        gate_flow_max = (
+                            check_gate_opening_max
+                            if check_gate_mode == "opening"
+                            else check_gate_flow_max
+                        )
+                        q_value, selected_q_gate, flow_tracking = (
+                            _select_flow_and_gate_by_one_step_trials(
+                                client,
+                                state_path=trial_state_path,
+                                step=step,
+                                pool_id=reach.pool_id,
+                                boundary_gate_id=boundary_gate_id,
+                                target_gate_id=target_gate_id,
+                                check_gate_id=check_gate_id,
+                                target_h1=float(target),
+                                q_min=config.q_min,
+                                q_max=max(config.q_min, trial_q_max),
+                                tolerance=config.flow_tracking_tolerance,
+                                max_trials=config.flow_tracking_max_trials,
+                                current_q_gate=applied_q_gate,
+                                amplitude_start=config.check_gate_amplitude_start,
+                                amplitude_step=config.check_gate_amplitude_step,
+                                amplitude_max=config.check_gate_amplitude_max,
+                                flow_min=gate_flow_min,
+                                flow_max=gate_flow_max,
+                                search_points=config.check_gate_search_points,
+                                mode=check_gate_mode,
+                            )
+                        )
+                        applied_q_gate = float(selected_q_gate)
+                    else:
+                        q_value, flow_tracking = _select_flow_by_one_step_trials(
+                            client,
+                            state_path=trial_state_path,
+                            step=step,
+                            pool_id=reach.pool_id,
+                            boundary_gate_id=boundary_gate_id,
+                            target_gate_id=target_gate_id,
+                            target_h1=float(target),
+                            q_min=config.q_min,
+                            q_max=max(config.q_min, trial_q_max),
+                            tolerance=config.flow_tracking_tolerance,
+                            max_trials=config.flow_tracking_max_trials,
+                        )
                     flow_tracking["flow_tracking_downstream_gate_q_max"] = (
                         downstream_constraint_q_max
                     )
@@ -625,6 +943,10 @@ def run_pid_reconstruction(
                 }
                 client.update_BC_sim_only(step)
                 client.set_GatesFlow_byID_sim(boundary_gate_id, float(q_value))
+                if client is pid_client and config.check_gate_enabled:
+                    _set_check_gate_control(
+                        client, check_gate_id, float(applied_q_gate), check_gate_mode
+                    )
                 client.stepSolver_sim_Roe_only_pool(step, reach.pool_id)
                 try:
                     if client.check_nan_sim():

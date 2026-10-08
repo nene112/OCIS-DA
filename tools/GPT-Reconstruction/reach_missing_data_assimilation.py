@@ -1258,6 +1258,14 @@ def _write_rows_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
         "flow_tracking_q_min",
         "flow_tracking_q_max",
         "flow_tracking_downstream_gate_q_max",
+        "flow_tracking_diversion_only_error",
+        "check_gate_adjusted",
+        "check_gate_amplitude_used",
+        "check_gate_mode",
+        "check_gate_current_flow",
+        "check_gate_selected_flow",
+        "check_gate_current_opening",
+        "check_gate_selected_opening",
         "pid_anti_windup",
     ]
     with path.open("w", encoding="utf-8-sig", newline="") as stream:

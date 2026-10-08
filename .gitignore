@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+*.log.txt
+*_log.txt
+
+# Temporary EnKF DLL copies created at runtime
+tools/OcisMILPNet_enkf_*.dll
+
+# Case data (input/mesh/output) — large and machine-specific; not versioned
+data/
