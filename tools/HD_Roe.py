@@ -190,6 +190,7 @@ class OcisMILPNet:
   
 		self._Split_mesh = self._bind("Split_mesh", [ctypes.c_void_p], None)
 		self._Auto_correct_endpoint = self._bind("Auto_correct_endpoint", [ctypes.c_void_p], None)
+		self._set_CrossSection = self._bind_optional("set_CrossSection", [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int, ctypes.c_int], None)
 		self._Auto_correct_gates_calculationType = self._bind("Auto_correct_gates_calculationType", [ctypes.c_void_p], None)
   
 		self._stepSolver_sim = self._bind("stepSolver_sim", [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)], None)
@@ -304,6 +305,46 @@ class OcisMILPNet:
 
 	def Split_mesh(self) -> None:
 		self._Split_mesh(self.obj)
+
+	def set_CrossSection(self, path: str | Path, cs_start: int = 0, cs_end: int | None = None) -> None:
+		"""导入指定JSON/GeoJSON或目录；需先初始化网格。DLL仅更新床面高程。
+
+		单文件暂存于独立目录，防止DLL扫描同目录下其他GeoJSON。
+		目录方式会在该目录下写出ReWriteMesh网格。
+		"""
+		if self._set_CrossSection is None:
+			raise UnsupportedExportError("当前 DLL 未导出 set_CrossSection")
+		import math
+		import shutil
+		import tempfile
+		location = Path(path).resolve()
+		if not location.exists():
+			raise FileNotFoundError(location)
+		files = [location] if location.is_file() else sorted(location.glob("*geojson*"))
+		if not files:
+			raise ValueError("目录中没有GeoJSON文件")
+		counts = []
+		for file in files:
+			root = json.loads(file.read_text(encoding="utf-8-sig"))
+			features = root.get("features")
+			if not isinstance(features, list):
+				raise ValueError(f"{file.name} 缺少features数组")
+			for feature in features:
+				geometry = feature.get("geometry") or {}
+				coords = geometry.get("coordinates")
+				if not isinstance(coords, list) or len(coords) < 3 or not all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in coords[:3]):
+					raise ValueError(f"{file.name}: 断面缺少有效三维位置坐标；不能将null视为已导入")
+			counts.append(len(features))
+		if cs_end is None:
+			cs_end = min(counts) - 1
+		if not isinstance(cs_start, int) or not isinstance(cs_end, int) or cs_start < 0 or cs_end < cs_start or any(cs_end >= count for count in counts):
+			raise ValueError("断面索引范围无效（从0开始，包含起止索引）")
+		if location.is_file():
+			with tempfile.TemporaryDirectory(prefix="ocis_cross_section_") as directory:
+				shutil.copyfile(location, Path(directory) / "CrossSection.geojson")
+				self._set_CrossSection(self.obj, _as_path_bytes(directory + "/"), cs_start, cs_end)
+		else:
+			self._set_CrossSection(self.obj, _as_path_bytes(str(location) + "/"), cs_start, cs_end)
 
 	def Auto_correct_endpoint(self) -> None:
 		self._Auto_correct_endpoint(self.obj)
@@ -480,9 +521,11 @@ class OcisMILPNet:
 		self._set_all_gates_byType(self.obj, float(value), int(type))
 
 	def save_states(self, filename: str = "") -> None:
+		"""保存内存试算快照：水力变量、时钟、闸门和结果缓存；filename 为兼容参数。"""
 		self._save_states(self.obj, _as_path_bytes(filename))
 
 	def set_states(self, filename: str = "") -> None:
+		"""恢复最近的试算快照，供同一交互周期重复尝试控制量。"""
 		self._set_states(self.obj, _as_path_bytes(filename))
 
 	def reset_states(self, filename: str = "") -> None:

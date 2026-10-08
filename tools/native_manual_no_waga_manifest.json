@@ -1,0 +1,63 @@
+[
+  {
+    "name": "coinmumps-3.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\coinmumps-3.dll",
+    "sha256": "cb7b061056c1db48a1cfbd82dff3db8e8fa450968a102bcd0b726f0e08649adf"
+  },
+  {
+    "name": "ipopt-3.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\ipopt-3.dll",
+    "sha256": "3bcb3d916ce007fe61dfe177d218614c4b61cd7b6fd7f193643851a735274cf9"
+  },
+  {
+    "name": "libgcg.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\libgcg.dll",
+    "sha256": "6703dda86b58f077721df099496c9ec0efce67681e61cdd7d00921e43d942cbb"
+  },
+  {
+    "name": "libifcoremd.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\libifcoremd.dll",
+    "sha256": "c4495cea0c70af65a7214edc8abaf7ce61a3f64e0f1d8d8faf725b066fa29da0"
+  },
+  {
+    "name": "libiomp5md.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\libiomp5md.dll",
+    "sha256": "999e2141f7e6c20e7b5fc78b0e0a47aaf40e219f611e77d2423bbd4f0aaabd7e"
+  },
+  {
+    "name": "libmmd.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\libmmd.dll",
+    "sha256": "d69808fff3d92cab6246b30c6fe90bd3f521a095e2d8bb9417f83f6fbde574d7"
+  },
+  {
+    "name": "libscip.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\libscip.dll",
+    "sha256": "0697a62baca936d828282af02a37b41e348dfd66ef610c944cf2a3022dc869b8"
+  },
+  {
+    "name": "libsoplexshared.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\libsoplexshared.dll",
+    "sha256": "6a6fb3d84b458eb4e6a3d5a43efc493fa17bb50fe6b3e2177e7bc54ed814110d"
+  },
+  {
+    "name": "mpir.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\mpir.dll",
+    "sha256": "05ac59352bb96926ca32d5607b63ea9f1f85f84c7acacbf8c977e914f1930928"
+  },
+  {
+    "name": "OcisMILPNet.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\OcisMILPNet.dll",
+    "sha256": "dfd726e39b37b6d2a311060664b63fd62aa3915ed72dd8a891fd162e29dcfacc",
+    "checkpoint_patch_applied": true
+  },
+  {
+    "name": "svml_dispmd.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\svml_dispmd.dll",
+    "sha256": "df5493fc29b0d98f8c0b06b852908b2bacb7130c5e634b4a9a53b97c6c970f27"
+  },
+  {
+    "name": "tbb12.dll",
+    "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\tbb12.dll",
+    "sha256": "09e4fe649de82c5d2c9543ad869e2ec25770ee72138261397967b3930ef44398"
+  }
+]

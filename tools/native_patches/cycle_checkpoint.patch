@@ -1,0 +1,252 @@
+diff --git a/OcisMILPNet_dll/src/OcisMILPDll_export.cpp b/OcisMILPNet_dll/src/OcisMILPDll_export.cpp
+index 80bd22f..7d7f27f 100644
+--- a/OcisMILPNet_dll/src/OcisMILPDll_export.cpp
++++ b/OcisMILPNet_dll/src/OcisMILPDll_export.cpp
+@@ -577,10 +577,10 @@ void DA_sim(OcisMILPNetLab* obj,const char* solverType) {
+     save_states(obj, "");
+   }
+ 
++  set_states(obj, "");
+   obj->solver_sedi.canal_param.k = 0;
+   obj->k = 0;
+   obj->start_t = obj->solver_sedi.canal_param.start_t;
+-  set_states(obj, "");
+ 
+ }
+ 
+@@ -1080,6 +1080,12 @@ char* get_stepdata_sim(OcisMILPNetLab* obj, const char* datatype) {
+       //if (g == nullptr) {
+       //  continue;
+       //}
++      // A diversion's virtual node can have zero Q although its branch carries flow.
++      // Use the solver's gate diagnostic, sampled at the interaction start.
++      const auto series = obj->solver_sedi.sim_action.find(name);
++      if (series != obj->solver_sedi.sim_action.end() && !series->second.empty()) {
++        value = series->second.rbegin()->second;
++      }
+       data_j[to_string(i)] = value;
+       cout << "gates " << i << "," << "name: " << name << endl;
+     }
+@@ -1719,107 +1725,79 @@ void reset_state_sim(OcisMILPNetLab* obj, const char* timestamp) {
+ }
+ 
+ void save_states(OcisMILPNetLab* obj, const char* filename) {
+-  /// <summary>
+-  /// save_sts¿Î…¢µ„◊¥Ã¨£¨
+-  /// </summary>
+-  /// <param name="obj"></param>
+-  
+-  obj->save_sts.resize(obj->solver_sedi.guassParam.wNodeCount);
+-
+-  for (int i = 0; i < obj->solver_sedi.guassParam.wNodeCount; i++) {
+-    obj->solver_sedi.guassParam.wNode[i].DetaH = 0;
+-    stWaterNode* p = &obj->solver_sedi.guassParam.wNode[i];
+-
+-    //sts
+-    obj->save_sts[i].DetaH = p->DetaH;
+-    obj->save_sts[i].h = p->h;
+-    obj->save_sts[i].wh = p->wh;
+-    obj->save_sts[i].ux = p->ux;
+-    obj->save_sts[i].Q = p->Q;
+-
+-    //intermedia sts
+-    obj->save_sts[i].hd = p->hd;
+-    obj->save_sts[i].Qd = p->Qd;
+-    obj->save_sts[i].QLd = p->QLd;
+-    obj->save_sts[i].QRd = p->QRd;
+-    obj->save_sts[i].Cd = p->Cd;
+-    obj->save_sts[i].Ad = p->Ad;
+-    obj->save_sts[i].Gh = p->Gh;
+-    obj->save_sts[i].GCoe = 1;
+-    obj->save_sts[i].GhD = p->GhD;
+-    obj->save_sts[i].AI = p->AI;
+-    obj->save_sts[i].A = p->A;
+-    obj->save_sts[i].B = p->B;
+-    obj->save_sts[i].P = p->P;
+-    obj->save_sts[i].HR = p->HR;
+-    obj->save_sts[i].AL = p->AL;
+-    obj->save_sts[i].PL = p->PL;
+-    obj->save_sts[i].HRL = p->HRL;
+-    obj->save_sts[i].AR = p->AR;
+-    obj->save_sts[i].PR = p->PR;
+-    obj->save_sts[i].HRR = p->HRR;
+-
+-    //parameters
+-    obj->save_sts[i].Width = p->Width;
+-    obj->save_sts[i].zb = p->zb;
+-    obj->save_sts[i].tanb = p->tanb;
+-    obj->save_sts[i].cosb = p->cosb;
+-    obj->save_sts[i].manning = p->manning;
+-
+-  }
+-
++  if (!obj || !obj->solver_sedi.guassParam.wNode) return;
++  auto& solver = obj->solver_sedi;
++  auto& saved = obj->cycle_checkpoint;
++  obj->save_sts.assign(solver.guassParam.wNode,
++      solver.guassParam.wNode + solver.guassParam.wNodeCount);
++  saved.solver_k = solver.canal_param.k;
++  saved.wrapper_k = obj->k;
++  saved.epoch = solver.epoch;
++  saved.k_outfile = solver.k_outfile;
++  saved.nanLabel = solver.nanLabel;
++  saved.guass_nanLabel = solver.guassParam.nanLabel;
++  saved.gates.clear();
++  if (solver.gates && solver.gatesNum > 0)
++    saved.gates.assign(solver.gates, solver.gates + solver.gatesNum);
++  saved.pools = solver.pool_edges.pools;
++  saved.action = solver.action;
++  saved.sim_action = solver.sim_action;
++  saved.sim_action_set = solver.sim_action_set;
++  saved.sim_gates_e = solver.sim_gates_e;
++  saved.sim_gates_wh1 = solver.sim_gates_wh1;
++  saved.sim_gates_h1 = solver.sim_gates_h1;
++  saved.sim_gates_wh2 = solver.sim_gates_wh2;
++  saved.sim_gates_h2 = solver.sim_gates_h2;
++  saved.sim_gates_Fr = solver.sim_gates_Fr;
++  saved.sim_h = solver.sim_h;
++  saved.sim_wh = solver.sim_wh;
++  saved.sim_ux = solver.sim_ux;
++  saved.sim_Flow = solver.sim_Flow;
++  saved.sim_sd = solver.sim_sd;
++  saved.sim_canal_h = solver.sim_canal_h;
++  saved.sim_canal_wh = solver.sim_canal_wh;
++  saved.sim_canal_c = solver.sim_canal_c;
++  saved.id_gates_e_map = solver.id_gates_e_map;
++  saved.result_pt = solver.result_pt;
+ }
+ 
+ void set_states(OcisMILPNetLab* obj, const char* filename) {
+-  /// <summary>
+-  /// set_states£¨
+-  /// </summary>
+-  /// <param name="obj"></param>
+-  
+-  obj->save_sts.resize(obj->solver_sedi.guassParam.wNodeCount);
+-
+-  for (int i = 0; i < obj->solver_sedi.guassParam.wNodeCount; i++) {
+-    obj->solver_sedi.guassParam.wNode[i].DetaH = 0;
+-    stWaterNode* p = &obj->solver_sedi.guassParam.wNode[i];
+-
+-    //sts
+-    p->DetaH = obj->save_sts[i].DetaH;
+-    p->h = obj->save_sts[i].h;
+-    p->wh = obj->save_sts[i].wh;
+-    p->ux = obj->save_sts[i].ux;
+-    p->Q = obj->save_sts[i].Q;
+-
+-    //intermedia sts
+-    p->hd = obj->save_sts[i].hd;
+-    p->Qd = obj->save_sts[i].Qd;
+-    p->QLd = obj->save_sts[i].QLd;
+-    p->QRd = obj->save_sts[i].QRd;
+-    p->Cd = obj->save_sts[i].Cd;
+-    p->Ad = obj->save_sts[i].Ad;
+-    p->Gh = obj->save_sts[i].Gh;
+-    p->GCoe = 1;
+-    p->GhD = obj->save_sts[i].GhD;
+-    p->AI = obj->save_sts[i].AI;
+-    p->A = obj->save_sts[i].A;
+-    p->B = obj->save_sts[i].B;
+-    p->P = obj->save_sts[i].P;
+-    p->HR = obj->save_sts[i].HR;
+-    p->AL = obj->save_sts[i].AL;
+-    p->PL = obj->save_sts[i].PL;
+-    p->HRL = obj->save_sts[i].HRL;
+-    p->AR = obj->save_sts[i].AR;
+-    p->PR = obj->save_sts[i].PR;
+-    p->HRR = obj->save_sts[i].HRR;
+-
+-    //parameters
+-    p->Width = obj->save_sts[i].Width;
+-    p->zb = obj->save_sts[i].zb;
+-    p->tanb = obj->save_sts[i].tanb;
+-    p->cosb = obj->save_sts[i].cosb;
+-    p->manning = obj->save_sts[i].manning;
+-
++  if (!obj || obj->save_sts.empty()) return;
++  auto& solver = obj->solver_sedi;
++  const auto& saved = obj->cycle_checkpoint;
++  if (obj->save_sts.size() != static_cast<size_t>(solver.guassParam.wNodeCount)
++      || saved.gates.size() != static_cast<size_t>(solver.gatesNum)) {
++    std::cerr << "set_states: checkpoint mesh mismatch" << std::endl;
++    return;
+   }
+-
++  std::copy(obj->save_sts.begin(), obj->save_sts.end(), solver.guassParam.wNode);
++  std::copy(saved.gates.begin(), saved.gates.end(), solver.gates);
++  solver.canal_param.k = saved.solver_k;
++  obj->k = saved.wrapper_k;
++  solver.epoch = saved.epoch;
++  solver.k_outfile = saved.k_outfile;
++  solver.nanLabel = saved.nanLabel;
++  solver.guassParam.nanLabel = saved.guass_nanLabel;
++  solver.pool_edges.pools = saved.pools;
++  solver.action = saved.action;
++  solver.sim_action = saved.sim_action;
++  solver.sim_action_set = saved.sim_action_set;
++  solver.sim_gates_e = saved.sim_gates_e;
++  solver.sim_gates_wh1 = saved.sim_gates_wh1;
++  solver.sim_gates_h1 = saved.sim_gates_h1;
++  solver.sim_gates_wh2 = saved.sim_gates_wh2;
++  solver.sim_gates_h2 = saved.sim_gates_h2;
++  solver.sim_gates_Fr = saved.sim_gates_Fr;
++  solver.sim_h = saved.sim_h;
++  solver.sim_wh = saved.sim_wh;
++  solver.sim_ux = saved.sim_ux;
++  solver.sim_Flow = saved.sim_Flow;
++  solver.sim_sd = saved.sim_sd;
++  solver.sim_canal_h = saved.sim_canal_h;
++  solver.sim_canal_wh = saved.sim_canal_wh;
++  solver.sim_canal_c = saved.sim_canal_c;
++  solver.id_gates_e_map = saved.id_gates_e_map;
++  solver.result_pt = saved.result_pt;
+ }
+ 
+ 
+@@ -2825,6 +2803,8 @@ void Auto_correct_gates_maxFlow(OcisMILPNetLab* obj)
+         time_param_json["start_t"] = obj->start_t;
+         time_param_json["time_nindex"] = obj->time_nindex;
+         time_param_json["k"] = obj->k;
++        time_param_json["solver_k"] = obj->solver_sedi.canal_param.k;
++        time_param_json["solver_elapsed_seconds"] = obj->solver_sedi.canal_param.k * step_t;
+         time_param_json["step_dt"] = obj->step_dt;
+         time_param_json["T"] = obj->T;
+         time_param_json["time_vars"] = obj->input_params.time_vars;
+diff --git a/OcisMILPNet_dll/src/OcisMILPDll_export.h b/OcisMILPNet_dll/src/OcisMILPDll_export.h
+index 446f7e5..85378a1 100644
+--- a/OcisMILPNet_dll/src/OcisMILPDll_export.h
++++ b/OcisMILPNet_dll/src/OcisMILPDll_export.h
+@@ -45,6 +45,32 @@ public:
+   waterSediment solver_sedi;
+   OCIS_scip solver;
+   std::vector<stWaterNode> save_sts;
++  // In-memory checkpoint for trial controls within one interaction cycle.
++  struct CycleCheckpoint {
++    int solver_k = 0, wrapper_k = 0, epoch = 0, k_outfile = 0, nanLabel = 0, guass_nanLabel = 0;
++    std::vector<stGate> gates;
++    decltype(waterSediment::pool_edges.pools) pools;
++    decltype(waterSediment::action) action;
++    decltype(waterSediment::sim_action) sim_action;
++    decltype(waterSediment::sim_action_set) sim_action_set;
++    decltype(waterSediment::sim_gates_e) sim_gates_e;
++    decltype(waterSediment::sim_gates_wh1) sim_gates_wh1;
++    decltype(waterSediment::sim_gates_h1) sim_gates_h1;
++    decltype(waterSediment::sim_gates_wh2) sim_gates_wh2;
++    decltype(waterSediment::sim_gates_h2) sim_gates_h2;
++    decltype(waterSediment::sim_gates_Fr) sim_gates_Fr;
++    decltype(waterSediment::sim_h) sim_h;
++    decltype(waterSediment::sim_wh) sim_wh;
++    decltype(waterSediment::sim_ux) sim_ux;
++    decltype(waterSediment::sim_Flow) sim_Flow;
++    decltype(waterSediment::sim_sd) sim_sd;
++    decltype(waterSediment::sim_canal_h) sim_canal_h;
++    decltype(waterSediment::sim_canal_wh) sim_canal_wh;
++    decltype(waterSediment::sim_canal_c) sim_canal_c;
++    decltype(waterSediment::id_gates_e_map) id_gates_e_map;
++    decltype(waterSediment::result_pt) result_pt;
++  } cycle_checkpoint;
++
+ 
+   std::vector<process_int_T> sim_solver_Q;
+   std::vector<process_int_T> sim_solver_wh;
