@@ -1,0 +1,2 @@
+# Preserve source-case encodings and line endings byte-for-byte across checkouts.
+data/dayudu/** -text

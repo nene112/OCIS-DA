@@ -11,5 +11,35 @@ __pycache__/
 # Temporary EnKF DLL copies created at runtime
 tools/OcisMILPNet_enkf_*.dll
 
-# Case data (input/mesh/output) — large and machine-specific; not versioned
-data/
+# Dayudu reproducible inputs; other cases remain local.
+data/*
+!data/dayudu/
+data/dayudu/*
+!data/dayudu/OCIS_dataConfig.json
+!data/dayudu/input/
+!data/dayudu/mesh/
+!data/dayudu/obs/
+!data/dayudu/fig/
+!data/dayudu/output/
+
+# Version only output images; runtime audits/models/logs stay local.
+data/dayudu/output/**
+!data/dayudu/output/**/
+!data/dayudu/output/**/*.png
+!data/dayudu/output/**/*.jpg
+!data/dayudu/output/**/*.jpeg
+!data/dayudu/output/**/*.svg
+!data/dayudu/output/**/*.webp
+data/dayudu/fig/**
+!data/dayudu/fig/**/
+!data/dayudu/fig/**/*.png
+!data/dayudu/fig/**/*.jpg
+!data/dayudu/fig/**/*.svg
+
+# Historical geometry, sync metadata, executables and runtime DLL backups.
+data/dayudu/mesh/*before_regeneration*
+data/dayudu/mesh/*.ffs_db
+data/dayudu/mesh/*.exe
+tools/OcisMILPNet.before_*.dll
+tools/native_backups/*.dll
+tools/native_backups/before_manual_no_waga/

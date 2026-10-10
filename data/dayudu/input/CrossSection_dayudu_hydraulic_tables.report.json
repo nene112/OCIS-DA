@@ -1,0 +1,484 @@
+[
+  {
+    "name": "DYD_001",
+    "chainage": "0+000~0+013",
+    "type": "arc_bottom_trapezoid",
+    "status": "ready",
+    "nodes": 1,
+    "notes": [
+      "mouth width checked at height minus documented raise (0.7 m): predicted=7.299495, relative_error=0.006919%"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_002",
+    "chainage": "0+013~0+086",
+    "type": "arc_bottom_trapezoid",
+    "status": "ready",
+    "nodes": 5,
+    "notes": [
+      "mouth width checked at height minus documented raise (0.7 m): predicted=7.299495, relative_error=0.006919%"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_003",
+    "chainage": "0+086~2+000",
+    "type": "arc_bottom_trapezoid",
+    "status": "ready_with_warning",
+    "nodes": 128,
+    "notes": [
+      "mouth width checked at height minus documented raise (0.7 m): predicted=6.899495, relative_error=5.486371%",
+      "DIMENSION_CONFLICT: supplied radius/slope govern geometry; mouth width differs by >2%; engineering review required",
+      "IMPUTED_PARAMETERS: borrowed from DYD_002; not surveyed; transition uses constant donor geometry where applicable"
+    ],
+    "parameter_imputation": {
+      "source_section": "DYD_002",
+      "source_chainage": "0+013~0+086",
+      "fields": {
+        "side_slope": {
+          "original_value": null,
+          "adopted_value": 1.0
+        }
+      },
+      "method": "nearest adjoining upstream open-channel section",
+      "is_measured": false,
+      "authorized_scope": "fill incomplete open-channel sections from similar sections"
+    }
+  },
+  {
+    "name": "DYD_004",
+    "chainage": "2+000~3+694",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 113,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_005",
+    "chainage": "3+694~4+507",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 54,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_006",
+    "chainage": "4+507~4+578.5",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 5,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_007",
+    "chainage": "4+578.5~4+869",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 20,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_008",
+    "chainage": "4+869~4+978.3",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 7,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_009",
+    "chainage": "4+978.3~5+034.3",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 4,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_010",
+    "chainage": "5+034.3~6+702",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 111,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_011",
+    "chainage": "6+702~6+792",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 6,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_012",
+    "chainage": "6+792~8+561",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 118,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_013",
+    "chainage": "8+561~10+731",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 144,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_014",
+    "chainage": "10+731~11+655",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 62,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_015",
+    "chainage": "11+655~13+875",
+    "type": "arc_bottom_trapezoid",
+    "status": "ready",
+    "nodes": 148,
+    "notes": [
+      "mouth width checked at height minus documented raise (0.6 m): predicted=6.085281, relative_error=0.077482%"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_016",
+    "chainage": "13+875~14+775",
+    "type": "arc_bottom_trapezoid",
+    "status": "ready_with_warning",
+    "nodes": 60,
+    "notes": [
+      "mouth width checked at height minus documented raise (0.6 m): predicted=5.885281, relative_error=3.361554%",
+      "DIMENSION_CONFLICT: supplied radius/slope govern geometry; mouth width differs by >2%; engineering review required"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_017",
+    "chainage": "14+775~15+080",
+    "type": "arc_bottom_trapezoid",
+    "status": "ready",
+    "nodes": 21,
+    "notes": [
+      "mouth width checked at height minus documented raise (0.6 m): predicted=5.985281, relative_error=1.719518%"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_018",
+    "chainage": "15+080~18+760",
+    "type": "arc_bottom_trapezoid",
+    "status": "ready",
+    "nodes": 246,
+    "notes": [
+      "mouth width checked at height minus documented raise (0.6 m): predicted=5.653911, relative_error=0.069213%"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_019",
+    "chainage": "18+760~19+110",
+    "type": "trapezoid",
+    "status": "ready",
+    "nodes": 24,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_020",
+    "chainage": "19+110~20+600",
+    "type": "arc_bottom_trapezoid",
+    "status": "ready_with_warning",
+    "nodes": 101,
+    "notes": [
+      "mouth width checked at height minus documented raise (0.6 m): predicted=6.253911, relative_error=10.688682%",
+      "DIMENSION_CONFLICT: supplied radius/slope govern geometry; mouth width differs by >2%; engineering review required"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_021",
+    "chainage": "20+600~20+750",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 10,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_022",
+    "chainage": "20+750~21+100",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 24,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_023",
+    "chainage": "21+100~22+162",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 72,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_024",
+    "chainage": "22+162~22+300",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 9,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_025",
+    "chainage": "22+300~22+537",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 16,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_026",
+    "chainage": "22+537~23+537",
+    "type": "tunnel",
+    "status": "unresolved",
+    "nodes": 67,
+    "notes": [
+      "closed structure: free-surface lookup cannot replace pressure-flow geometry"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_027",
+    "chainage": "23+537~23+591",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 4,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_028",
+    "chainage": "23+591~23+875",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 18,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_029",
+    "chainage": "23+875~26+200",
+    "type": "u_shaped",
+    "status": "ready",
+    "nodes": 156,
+    "notes": [
+      "U wall inclination is measured from vertical; D is diameter",
+      "mouth width checked at height minus documented raise (0.6 m): predicted=3.616498, relative_error=0.096737%"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_030",
+    "chainage": "26+200~27+883",
+    "type": "u_shaped",
+    "status": "ready",
+    "nodes": 112,
+    "notes": [
+      "U wall inclination is measured from vertical; D is diameter",
+      "mouth width checked at height minus documented raise (0.6 m): predicted=3.468506, relative_error=0.043058%"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_031",
+    "chainage": "27+883~28+472",
+    "type": "tunnel",
+    "status": "unresolved",
+    "nodes": 39,
+    "notes": [
+      "closed structure: free-surface lookup cannot replace pressure-flow geometry"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_032",
+    "chainage": "28+472~28+520",
+    "type": "u_shaped",
+    "status": "ready",
+    "nodes": 3,
+    "notes": [
+      "U wall inclination is measured from vertical; D is diameter",
+      "mouth width checked at height minus documented raise (0.6 m): predicted=3.468506, relative_error=0.043058%"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_033",
+    "chainage": "28+520~28+577",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 4,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_034",
+    "chainage": "28+577~28+590",
+    "type": "transition",
+    "status": "ready_with_warning",
+    "nodes": 1,
+    "notes": [
+      "IMPUTED_PARAMETERS: borrowed from DYD_033; not surveyed; transition uses constant donor geometry where applicable"
+    ],
+    "parameter_imputation": {
+      "source_section": "DYD_033",
+      "source_chainage": "28+520~28+577",
+      "fields": {
+        "channel_height_m": {
+          "original_value": null,
+          "adopted_value": 2.1
+        },
+        "top_width_m": {
+          "original_value": null,
+          "adopted_value": 2.5
+        },
+        "side_slope": {
+          "original_value": null,
+          "adopted_value": 0.0
+        }
+      },
+      "method": "nearest adjoining upstream open-channel section",
+      "is_measured": false,
+      "authorized_scope": "fill incomplete open-channel sections from similar sections"
+    }
+  },
+  {
+    "name": "DYD_035",
+    "chainage": "28+590~28+750",
+    "type": "culvert",
+    "status": "unresolved",
+    "nodes": 10,
+    "notes": [
+      "closed structure: free-surface lookup cannot replace pressure-flow geometry"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_036",
+    "chainage": "28+750~28+801",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 4,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_037",
+    "chainage": "28+801~29+385",
+    "type": "tunnel",
+    "status": "unresolved",
+    "nodes": 39,
+    "notes": [
+      "closed structure: free-surface lookup cannot replace pressure-flow geometry"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_038",
+    "chainage": "29+385~29+422",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 3,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_039",
+    "chainage": "29+422~29+522",
+    "type": "culvert",
+    "status": "unresolved",
+    "nodes": 7,
+    "notes": [
+      "closed structure: free-surface lookup cannot replace pressure-flow geometry"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_040",
+    "chainage": "29+522~29+856",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 23,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_041",
+    "chainage": "29+856~30+238",
+    "type": "tunnel",
+    "status": "unresolved",
+    "nodes": 26,
+    "notes": [
+      "closed structure: free-surface lookup cannot replace pressure-flow geometry"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_042",
+    "chainage": "30+238~30+295.5",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 4,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_043",
+    "chainage": "30+295.5~30+389",
+    "type": "tunnel",
+    "status": "unresolved",
+    "nodes": 6,
+    "notes": [
+      "closed structure: free-surface lookup cannot replace pressure-flow geometry"
+    ],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_044",
+    "chainage": "30+389~30+551",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 11,
+    "notes": [],
+    "parameter_imputation": null
+  },
+  {
+    "name": "DYD_045",
+    "chainage": "30+551~30+750",
+    "type": "rectangle",
+    "status": "ready",
+    "nodes": 8,
+    "notes": [],
+    "parameter_imputation": null
+  }
+]

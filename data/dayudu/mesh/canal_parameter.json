@@ -1,0 +1,388 @@
+{
+    "总干渠": {
+        "public": {
+            "head wnindex": 0,
+            "property": [
+                  "Q20251012161706",
+                  "Q20251012161755",
+                  "Q20251012161921",
+                  "Q20251012161953"
+
+            ]
+        },
+         "0": {
+            "B": 2.4,
+            "Bottom Elevation": 522.0,
+            "Design Water Depth": 2.2,
+            "Design Water Level": 524.2,
+            "Manning": 0.015,
+            "Slope": 0.00025,
+            "Top Elevation": 524.64,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "10731": {
+            "B": 2.0,
+            "Bottom Elevation": 519.4095353,
+            "Design Water Depth": 2.08,
+            "Design Water Level": 521.4895353000001,
+            "Manning": 0.015,
+            "Slope": 0.00025,
+            "Top Elevation": 521.9055353,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "11655": {
+            "B": 3.0,
+            "Bottom Elevation": 519.1785353,
+            "Design Water Depth": 2.08,
+            "Design Water Level": 521.2585353000001,
+            "Manning": 0.015,
+            "Slope": 0.00024993751562109475,
+            "Top Elevation": 521.6745353,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "11691": {
+            "B": 2.0,
+            "Bottom Elevation": 519.1695375,
+            "Design Water Depth": 2.35,
+            "Design Water Level": 521.5195375000001,
+            "Manning": 0.015,
+            "Slope": 0.00028571428571428574,
+            "Top Elevation": 521.9895375000001,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "12591": {
+            "B": 1.0,
+            "Bottom Elevation": 518.9123947,
+            "Design Water Depth": 2.26,
+            "Design Water Level": 521.1723947,
+            "Manning": 0.015,
+            "Slope": 0.00028571428571428574,
+            "Top Elevation": 521.6243947,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "13875": {
+            "B": 2.0,
+            "Bottom Elevation": 518.5455375,
+            "Design Water Depth": 2.26,
+            "Design Water Level": 520.8055375,
+            "Manning": 0.015,
+            "Slope": 0.00028563267637817766,
+            "Top Elevation": 521.2575375,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "14775": {
+            "B": 1.0,
+            "Bottom Elevation": 518.2884681,
+            "Design Water Depth": 2.35,
+            "Design Water Level": 520.6384681000001,
+            "Manning": 0.015,
+            "Slope": 0.00028571428571428574,
+            "Top Elevation": 521.1084681000001,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "15266": {
+            "B": 1.0,
+            "Bottom Elevation": 518.1481824,
+            "Design Water Depth": 2.44,
+            "Design Water Level": 520.5881824,
+            "Manning": 0.015,
+            "Slope": 0.00025,
+            "Top Elevation": 521.0761824,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "16385": {
+            "B": 2.0,
+            "Bottom Elevation": 517.8684324,
+            "Design Water Depth": 2.44,
+            "Design Water Level": 520.3084324,
+            "Manning": 0.015,
+            "Slope": 0.00024993751562109475,
+            "Top Elevation": 520.7964324,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "19228": {
+            "B": 3.5,
+            "Bottom Elevation": 517.15786,
+            "Design Water Depth": 2.27,
+            "Design Water Level": 519.42786,
+            "Manning": 0.015,
+            "Slope": 0.00024993751562109475,
+            "Top Elevation": 519.8818600000001,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "19522": {
+            "B": 4.5,
+            "Bottom Elevation": 517.0843784,
+            "Design Water Depth": 2.27,
+            "Design Water Level": 519.3543784,
+            "Manning": 0.015,
+            "Slope": 0.0002498750624687656,
+            "Top Elevation": 519.8083784,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "1956": {
+            "B": 2.4,
+            "Bottom Elevation": 521.511,
+            "Design Water Depth": 2.2,
+            "Design Water Level": 523.711,
+            "Manning": 0.015,
+            "Slope": 0.00025,
+            "Top Elevation": 524.151,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "21195": {
+            "B": 3.8,
+            "Bottom Elevation": 516.6663374,
+            "Design Water Depth": 2.08,
+            "Design Water Level": 518.7463374,
+            "Manning": 0.015,
+            "Slope": 0.0002498750624687656,
+            "Top Elevation": 519.1623374,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "21772": {
+            "B": 4.8,
+            "Bottom Elevation": 516.5221595,
+            "Design Water Depth": 2.08,
+            "Design Water Level": 518.6021595000001,
+            "Manning": 0.015,
+            "Slope": 0.0002498126405196103,
+            "Top Elevation": 519.0181595,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "23591": {
+            "B": 3.76,
+            "Bottom Elevation": 516.0677503,
+            "Design Water Depth": 1.58,
+            "Design Water Level": 517.6477503,
+            "Manning": 0.015,
+            "Slope": 0.0002498126405196103,
+            "Top Elevation": 517.9637502999999,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "23856": {
+            "B": 3.76,
+            "Bottom Elevation": 516.00155,
+            "Design Water Depth": 1.58,
+            "Design Water Level": 517.58155,
+            "Manning": 0.015,
+            "Slope": 0.00024975024975024975,
+            "Top Elevation": 517.8975499999999,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "23925": {
+            "B": 2.96,
+            "Bottom Elevation": 515.9843172,
+            "Design Water Depth": 2.01,
+            "Design Water Level": 517.9943172,
+            "Manning": 0.015,
+            "Slope": 0.00024968789013732833,
+            "Top Elevation": 518.3963172,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "24133": {
+            "B": 2.96,
+            "Bottom Elevation": 515.9323821,
+            "Design Water Depth": 2.01,
+            "Design Water Level": 517.9423821,
+            "Manning": 0.015,
+            "Slope": 0.00024962556165751375,
+            "Top Elevation": 518.3443821000001,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "24395": {
+            "B": 2.96,
+            "Bottom Elevation": 515.8669802,
+            "Design Water Depth": 2.01,
+            "Design Water Level": 517.8769801999999,
+            "Manning": 0.015,
+            "Slope": 0.0002495632642874969,
+            "Top Elevation": 518.2789802,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "24676": {
+            "B": 2.96,
+            "Bottom Elevation": 515.796853,
+            "Design Water Depth": 2.01,
+            "Design Water Level": 517.806853,
+            "Manning": 0.015,
+            "Slope": 0.000249500998003992,
+            "Top Elevation": 518.2088530000001,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "25178": {
+            "B": 2.96,
+            "Bottom Elevation": 515.6716035,
+            "Design Water Depth": 2.01,
+            "Design Water Level": 517.6816034999999,
+            "Manning": 0.015,
+            "Slope": 0.0002494387627837366,
+            "Top Elevation": 518.0836035,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "26150": {
+            "B": 2.46,
+            "Bottom Elevation": 515.429149,
+            "Design Water Depth": 2.02,
+            "Design Water Level": 517.449149,
+            "Manning": 0.015,
+            "Slope": 0.00024937655860349125,
+            "Top Elevation": 517.853149,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "26408": {
+            "B": 2.46,
+            "Bottom Elevation": 515.3648098,
+            "Design Water Depth": 1.9,
+            "Design Water Level": 517.2648098,
+            "Manning": 0.015,
+            "Slope": 0.0002493143854400399,
+            "Top Elevation": 517.6448098,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "27883": {
+            "B": 3.46,
+            "Bottom Elevation": 514.9970711,
+            "Design Water Depth": 1.9,
+            "Design Water Level": 516.8970711,
+            "Manning": 0.015,
+            "Slope": 0.0002492522432701894,
+            "Top Elevation": 517.2770711,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "30295.5": {
+            "B": 2.5,
+            "Bottom Elevation": 514.3957501,
+            "Design Water Depth": 1.4,
+            "Design Water Level": 515.7957501,
+            "Manning": 0.015,
+            "Slope": 0.0004478280340349306,
+            "Top Elevation": 516.0757500999999,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "30426": {
+            "B": 3.5,
+            "Bottom Elevation": 514.3373085,
+            "Design Water Depth": 1.4,
+            "Design Water Level": 515.7373084999999,
+            "Manning": 0.015,
+            "Slope": 0.0004476275738585497,
+            "Top Elevation": 516.0173084999999,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "4970": {
+            "B": 2.4,
+            "Bottom Elevation": 520.7575,
+            "Design Water Depth": 2.46,
+            "Design Water Level": 523.2175000000001,
+            "Manning": 0.015,
+            "Slope": 0.0002340276152586005,
+            "Top Elevation": 523.7095,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "5030": {
+            "B": 2.4,
+            "Bottom Elevation": 520.7434583,
+            "Design Water Depth": 2.46,
+            "Design Water Level": 523.2034583000001,
+            "Manning": 0.015,
+            "Slope": 0.0002340276152586005,
+            "Top Elevation": 523.6954583,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "5350": {
+            "B": 2.4,
+            "Bottom Elevation": 520.6685695,
+            "Design Water Depth": 2.46,
+            "Design Water Level": 523.1285695,
+            "Manning": 0.015,
+            "Slope": 0.0002340276152586005,
+            "Top Elevation": 523.6205695,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "5430": {
+            "B": 3.4,
+            "Bottom Elevation": 520.6498473,
+            "Design Water Depth": 2.46,
+            "Design Water Level": 523.1098473000001,
+            "Manning": 0.015,
+            "Slope": 0.0002339728591483388,
+            "Top Elevation": 523.6018473,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "6720": {
+            "B": 2.4,
+            "Bottom Elevation": 520.3480223,
+            "Design Water Depth": 2.46,
+            "Design Water Level": 522.8080223000001,
+            "Manning": 0.015,
+            "Slope": 0.0002340276152586005,
+            "Top Elevation": 523.3000223,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "6810": {
+            "B": 3.4,
+            "Bottom Elevation": 520.3269598,
+            "Design Water Depth": 2.46,
+            "Design Water Level": 522.7869598000001,
+            "Manning": 0.035,
+            "Slope": 0.0002339728591483388,
+            "Top Elevation": 523.2789598,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "9145": {
+            "B": 2.4,
+            "Bottom Elevation": 519.7806332,
+            "Design Water Depth": 2.33,
+            "Design Water Level": 522.1106332,
+            "Manning": 0.035,
+            "Slope": 0.0002340276152586005,
+            "Top Elevation": 522.5766332000001,
+            "iniH": 0.85,
+            "m": 1.0
+        },
+        "9455": {
+            "B": 3.4,
+            "Bottom Elevation": 519.7080846,
+            "Design Water Depth": 2.33,
+            "Design Water Level": 522.0380846,
+            "Manning": 0.035,
+            "Slope": 0.0002339728591483388,
+            "Top Elevation": 522.5040846,
+            "iniH": 0.85,
+            "m": 1.0
+        }
+    }
+}

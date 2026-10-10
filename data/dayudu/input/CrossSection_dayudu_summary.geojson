@@ -1,0 +1,3687 @@
+{
+  "type": "FeatureCollection",
+  "name": "CrossSection_dayudu_summary",
+  "metadata": {
+    "source_file": "大禹渡灌区总干渠断面情况汇总表.csv",
+    "source_sha256": "e13bd5c9b13831d5d685c1605f6405c313f9a05243edb5814a14d52dcdf20181",
+    "source_encoding": "UTF-8 with BOM",
+    "record_count": 45,
+    "coverage_m": [
+      0,
+      30750
+    ],
+    "reference": "1D WEB.md 第2.1节及 CrossSection.geojson 的FeatureCollection结构",
+    "units_assumption": "尺寸、水深、长度按m；流量按m3/s；流速按m/s；倾角字段按原表标题为度，不推断其他含义",
+    "profile_coordinates": "z_list 为底部z=0的相对高度；cumulative_distances 为从最左侧x=0起的横向局部坐标",
+    "geometry_status": "源表缺少GIS平面坐标与绝对底高程，geometry/x/y/z均为null，未设置伪造CRS",
+    "dll_compatibility": "仅整理数据；当前LoadCrossSectionPoints要求geometry.coordinates至少三个数值，此文件缺测GIS坐标，不能直接更新水动力网格。当前函数也不读取z_list或规则断面参数。",
+    "missing_value_policy": "空白数值->null；真实0保留；原始13列保存在source_values",
+    "local_profile_count": 26,
+    "all_profiles_are_derived": true
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": 1,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_001",
+        "segment_id": 0,
+        "segment_index": 0,
+        "chainage": "0+000~0+013",
+        "chainage_start_m": 0.0,
+        "chainage_end_m": 13.0,
+        "river_distance": 0.0,
+        "source_record_index": 1,
+        "length_m": 13.0,
+        "channel_height_m": 2.9,
+        "inclination_deg": null,
+        "top_width_m": 7.3,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.225,
+        "design_velocity_mps": 1.206,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "3.5",
+        "radius_m": 3.5,
+        "diameter_m": null,
+        "engineering_measures": "改建，h+0.7",
+        "remarks": "弧底梯形渠",
+        "source_values": {
+          "桩号": "0+000~0+013",
+          "长度": "13",
+          "纵坡": "1/4000",
+          "半径": "3.5",
+          "渠高": "2.9",
+          "倾角/度": "",
+          "口宽": "7.3",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.225",
+          "流速": "1.206",
+          "工程措施": "改建，h+0.7",
+          "备注": "弧底梯形渠"
+        },
+        "section_type": "arc_bottom_trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_002",
+        "segment_id": 1,
+        "segment_index": 0,
+        "chainage": "0+013~0+086",
+        "chainage_start_m": 13.0,
+        "chainage_end_m": 86.0,
+        "river_distance": 13.0,
+        "source_record_index": 2,
+        "length_m": 73.0,
+        "channel_height_m": 2.9,
+        "inclination_deg": 2.8,
+        "top_width_m": 7.3,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.225,
+        "design_velocity_mps": 1.206,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "3.5",
+        "radius_m": 3.5,
+        "diameter_m": null,
+        "engineering_measures": "改建，h+0.7",
+        "remarks": "弧底梯形渠",
+        "source_values": {
+          "桩号": "0+013~0+086",
+          "长度": "73",
+          "纵坡": "1/4000",
+          "半径": "3.5",
+          "渠高": "2.9",
+          "倾角/度": "2.8",
+          "口宽": "7.3",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.225",
+          "流速": "1.206",
+          "工程措施": "改建，h+0.7",
+          "备注": "弧底梯形渠"
+        },
+        "section_type": "arc_bottom_trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 3,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_003",
+        "segment_id": 2,
+        "segment_index": 0,
+        "chainage": "0+086~2+000",
+        "chainage_start_m": 86.0,
+        "chainage_end_m": 2000.0,
+        "river_distance": 86.0,
+        "source_record_index": 3,
+        "length_m": 1914.0,
+        "channel_height_m": 2.7,
+        "inclination_deg": null,
+        "top_width_m": 7.3,
+        "side_slope": null,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.225,
+        "design_velocity_mps": 1.206,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "3.5",
+        "radius_m": 3.5,
+        "diameter_m": null,
+        "engineering_measures": "改建，h+0.7",
+        "remarks": "弧底梯形渠",
+        "source_values": {
+          "桩号": "0+086~2+000",
+          "长度": "1914",
+          "纵坡": "1/4000",
+          "半径": "3.5",
+          "渠高": "2.7",
+          "倾角/度": "",
+          "口宽": "7.3",
+          "边坡": "",
+          "流量": "13.1",
+          "水深": "2.225",
+          "流速": "1.206",
+          "工程措施": "改建，h+0.7",
+          "备注": "弧底梯形渠"
+        },
+        "section_type": "arc_bottom_trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 4,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_004",
+        "segment_id": 3,
+        "segment_index": 0,
+        "chainage": "2+000~3+694",
+        "chainage_start_m": 2000.0,
+        "chainage_end_m": 3694.0,
+        "river_distance": 2000.0,
+        "source_record_index": 4,
+        "length_m": 1694.0,
+        "channel_height_m": 2.7,
+        "inclination_deg": 3.1,
+        "top_width_m": 7.15,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.103,
+        "design_velocity_mps": 1.215,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.7",
+        "remarks": "梯形渠",
+        "source_values": {
+          "桩号": "2+000~3+694",
+          "长度": "1694",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.7",
+          "倾角/度": "3.1",
+          "口宽": "7.15",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.103",
+          "流速": "1.215",
+          "工程措施": "防渗，h+0.7",
+          "备注": "梯形渠"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.7,
+          0,
+          0,
+          2.7
+        ],
+        "cumulative_distances": [
+          0,
+          2.7,
+          4.45,
+          7.15
+        ],
+        "segment_distances": [
+          2.7,
+          1.75,
+          2.7
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.7
+            ],
+            [
+              2.7,
+              0
+            ],
+            [
+              4.45,
+              0
+            ],
+            [
+              7.15,
+              2.7
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 5,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_005",
+        "segment_id": 4,
+        "segment_index": 0,
+        "chainage": "3+694~4+507",
+        "chainage_start_m": 3694.0,
+        "chainage_end_m": 4507.0,
+        "river_distance": 3694.0,
+        "source_record_index": 5,
+        "length_m": 813.0,
+        "channel_height_m": 2.65,
+        "inclination_deg": 3.2,
+        "top_width_m": 6.85,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.076,
+        "design_velocity_mps": 1.256,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "改建，h+0.7",
+        "remarks": "梯形渠",
+        "source_values": {
+          "桩号": "3+694~4+507",
+          "长度": "813",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.65",
+          "倾角/度": "3.2",
+          "口宽": "6.85",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.076",
+          "流速": "1.256",
+          "工程措施": "改建，h+0.7",
+          "备注": "梯形渠"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.65,
+          0,
+          0,
+          2.65
+        ],
+        "cumulative_distances": [
+          0,
+          2.65,
+          4.2,
+          6.85
+        ],
+        "segment_distances": [
+          2.65,
+          1.55,
+          2.65
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.65
+            ],
+            [
+              2.65,
+              0
+            ],
+            [
+              4.199999999999999,
+              0
+            ],
+            [
+              6.85,
+              2.65
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 6,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_006",
+        "segment_id": 5,
+        "segment_index": 0,
+        "chainage": "4+507~4+578.5",
+        "chainage_start_m": 4507.0,
+        "chainage_end_m": 4578.5,
+        "river_distance": 4507.0,
+        "source_record_index": 6,
+        "length_m": 71.5,
+        "channel_height_m": 2.7,
+        "inclination_deg": 2.56,
+        "top_width_m": 6.4,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.261,
+        "design_velocity_mps": 1.293,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "改建，h+0.7",
+        "remarks": "梯形渠",
+        "source_values": {
+          "桩号": "4+507~4+578.5",
+          "长度": "71.5",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.7",
+          "倾角/度": "2.56",
+          "口宽": "6.4",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.261",
+          "流速": "1.293",
+          "工程措施": "改建，h+0.7",
+          "备注": "梯形渠"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.7,
+          0,
+          0,
+          2.7
+        ],
+        "cumulative_distances": [
+          0,
+          2.7,
+          3.7,
+          6.4
+        ],
+        "segment_distances": [
+          2.7,
+          1.0,
+          2.7
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.7
+            ],
+            [
+              2.7,
+              0
+            ],
+            [
+              3.7,
+              0
+            ],
+            [
+              6.4,
+              2.7
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 7,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_007",
+        "segment_id": 6,
+        "segment_index": 0,
+        "chainage": "4+578.5~4+869",
+        "chainage_start_m": 4578.5,
+        "chainage_end_m": 4869.0,
+        "river_distance": 4578.5,
+        "source_record_index": 7,
+        "length_m": 290.5,
+        "channel_height_m": 2.7,
+        "inclination_deg": 3.2,
+        "top_width_m": 6.85,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.076,
+        "design_velocity_mps": 1.256,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "改建，h+0.7",
+        "remarks": "梯形渠",
+        "source_values": {
+          "桩号": "4+578.5~4+869",
+          "长度": "290.5",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.7",
+          "倾角/度": "3.2",
+          "口宽": "6.85",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.076",
+          "流速": "1.256",
+          "工程措施": "改建，h+0.7",
+          "备注": "梯形渠"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.7,
+          0,
+          0,
+          2.7
+        ],
+        "cumulative_distances": [
+          0,
+          2.7,
+          4.15,
+          6.85
+        ],
+        "segment_distances": [
+          2.7,
+          1.45,
+          2.7
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.7
+            ],
+            [
+              2.7,
+              0
+            ],
+            [
+              4.1499999999999995,
+              0
+            ],
+            [
+              6.85,
+              2.7
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 8,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_008",
+        "segment_id": 7,
+        "segment_index": 0,
+        "chainage": "4+869~4+978.3",
+        "chainage_start_m": 4869.0,
+        "chainage_end_m": 4978.3,
+        "river_distance": 4869.0,
+        "source_record_index": 8,
+        "length_m": 109.3,
+        "channel_height_m": 2.7,
+        "inclination_deg": 3.0,
+        "top_width_m": 7.05,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.131,
+        "design_velocity_mps": 1.223,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.7",
+        "remarks": "梯形渠",
+        "source_values": {
+          "桩号": "4+869~4+978.3",
+          "长度": "109.3",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.7",
+          "倾角/度": "3",
+          "口宽": "7.05",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.131",
+          "流速": "1.223",
+          "工程措施": "防渗，h+0.7",
+          "备注": "梯形渠"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.7,
+          0,
+          0,
+          2.7
+        ],
+        "cumulative_distances": [
+          0,
+          2.7,
+          4.35,
+          7.05
+        ],
+        "segment_distances": [
+          2.7,
+          1.65,
+          2.7
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.7
+            ],
+            [
+              2.7,
+              0
+            ],
+            [
+              4.35,
+              0
+            ],
+            [
+              7.05,
+              2.7
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 9,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_009",
+        "segment_id": 8,
+        "segment_index": 0,
+        "chainage": "4+978.3~5+034.3",
+        "chainage_start_m": 4978.3,
+        "chainage_end_m": 5034.3,
+        "river_distance": 4978.3,
+        "source_record_index": 9,
+        "length_m": 56.0,
+        "channel_height_m": 2.75,
+        "inclination_deg": 2.25,
+        "top_width_m": 6.55,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.361,
+        "design_velocity_mps": 1.261,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.7",
+        "remarks": "梯形渠",
+        "source_values": {
+          "桩号": "4+978.3~5+034.3",
+          "长度": "56",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.75",
+          "倾角/度": "2.25",
+          "口宽": "6.55",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.361",
+          "流速": "1.261",
+          "工程措施": "防渗，h+0.7",
+          "备注": "梯形渠"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.75,
+          0,
+          0,
+          2.75
+        ],
+        "cumulative_distances": [
+          0,
+          2.75,
+          3.8,
+          6.55
+        ],
+        "segment_distances": [
+          2.75,
+          1.05,
+          2.75
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.75
+            ],
+            [
+              2.75,
+              0
+            ],
+            [
+              3.8,
+              0
+            ],
+            [
+              6.55,
+              2.75
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 10,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_010",
+        "segment_id": 9,
+        "segment_index": 0,
+        "chainage": "5+034.3~6+702",
+        "chainage_start_m": 5034.3,
+        "chainage_end_m": 6702.0,
+        "river_distance": 5034.3,
+        "source_record_index": 10,
+        "length_m": 1667.7,
+        "channel_height_m": 2.7,
+        "inclination_deg": 2.85,
+        "top_width_m": 7.15,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.174,
+        "design_velocity_mps": 1.205,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.7",
+        "remarks": "梯形渠",
+        "source_values": {
+          "桩号": "5+034.3~6+702",
+          "长度": "1667.7",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.7",
+          "倾角/度": "2.85",
+          "口宽": "7.15",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.174",
+          "流速": "1.205",
+          "工程措施": "防渗，h+0.7",
+          "备注": "梯形渠"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.7,
+          0,
+          0,
+          2.7
+        ],
+        "cumulative_distances": [
+          0,
+          2.7,
+          4.45,
+          7.15
+        ],
+        "segment_distances": [
+          2.7,
+          1.75,
+          2.7
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.7
+            ],
+            [
+              2.7,
+              0
+            ],
+            [
+              4.45,
+              0
+            ],
+            [
+              7.15,
+              2.7
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 11,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_011",
+        "segment_id": 10,
+        "segment_index": 0,
+        "chainage": "6+702~6+792",
+        "chainage_start_m": 6702.0,
+        "chainage_end_m": 6792.0,
+        "river_distance": 6702.0,
+        "source_record_index": 11,
+        "length_m": 90.0,
+        "channel_height_m": 2.75,
+        "inclination_deg": 2.5,
+        "top_width_m": 6.5,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.279,
+        "design_velocity_mps": 1.277,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "改建，h+0.7",
+        "remarks": "梯形渠/钢筋砼",
+        "source_values": {
+          "桩号": "6+702~6+792",
+          "长度": "90",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.75",
+          "倾角/度": "2.5",
+          "口宽": "6.5",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.279",
+          "流速": "1.277",
+          "工程措施": "改建，h+0.7",
+          "备注": "梯形渠/钢筋砼"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.75,
+          0,
+          0,
+          2.75
+        ],
+        "cumulative_distances": [
+          0,
+          2.75,
+          3.75,
+          6.5
+        ],
+        "segment_distances": [
+          2.75,
+          1.0,
+          2.75
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.75
+            ],
+            [
+              2.75,
+              0
+            ],
+            [
+              3.75,
+              0
+            ],
+            [
+              6.5,
+              2.75
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 12,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_012",
+        "segment_id": 11,
+        "segment_index": 0,
+        "chainage": "6+792~8+561",
+        "chainage_start_m": 6792.0,
+        "chainage_end_m": 8561.0,
+        "river_distance": 6792.0,
+        "source_record_index": 12,
+        "length_m": 1769.0,
+        "channel_height_m": 2.75,
+        "inclination_deg": 2.85,
+        "top_width_m": 7.1,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.174,
+        "design_velocity_mps": 1.211,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.7",
+        "remarks": "梯形渠",
+        "source_values": {
+          "桩号": "6+792~8+561",
+          "长度": "1769",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.75",
+          "倾角/度": "2.85",
+          "口宽": "7.1",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.174",
+          "流速": "1.211",
+          "工程措施": "防渗，h+0.7",
+          "备注": "梯形渠"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.75,
+          0,
+          0,
+          2.75
+        ],
+        "cumulative_distances": [
+          0,
+          2.75,
+          4.35,
+          7.1
+        ],
+        "segment_distances": [
+          2.75,
+          1.6,
+          2.75
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.75
+            ],
+            [
+              2.75,
+              0
+            ],
+            [
+              4.35,
+              0
+            ],
+            [
+              7.1,
+              2.75
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 13,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_013",
+        "segment_id": 12,
+        "segment_index": 0,
+        "chainage": "8+561~10+731",
+        "chainage_start_m": 8561.0,
+        "chainage_end_m": 10731.0,
+        "river_distance": 8561.0,
+        "source_record_index": 13,
+        "length_m": 2170.0,
+        "channel_height_m": 2.9,
+        "inclination_deg": 2.75,
+        "top_width_m": 6.85,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.203,
+        "design_velocity_mps": 1.239,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.7",
+        "remarks": "梯形渠",
+        "source_values": {
+          "桩号": "8+561~10+731",
+          "长度": "2170",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.9",
+          "倾角/度": "2.75",
+          "口宽": "6.85",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.203",
+          "流速": "1.239",
+          "工程措施": "防渗，h+0.7",
+          "备注": "梯形渠"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.9,
+          0,
+          0,
+          2.9
+        ],
+        "cumulative_distances": [
+          0,
+          2.9,
+          3.95,
+          6.85
+        ],
+        "segment_distances": [
+          2.9,
+          1.05,
+          2.9
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.9
+            ],
+            [
+              2.9,
+              0
+            ],
+            [
+              3.9499999999999997,
+              0
+            ],
+            [
+              6.85,
+              2.9
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 14,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_014",
+        "segment_id": 13,
+        "segment_index": 0,
+        "chainage": "10+731~11+655",
+        "chainage_start_m": 10731.0,
+        "chainage_end_m": 11655.0,
+        "river_distance": 10731.0,
+        "source_record_index": 14,
+        "length_m": 924.0,
+        "channel_height_m": 2.85,
+        "inclination_deg": 2.8,
+        "top_width_m": 6.5,
+        "side_slope": 1.0,
+        "design_flow_m3s": 13.1,
+        "design_water_depth_m": 2.188,
+        "design_velocity_mps": 1.2,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "U改梯，h+1.0",
+        "remarks": "梯形、15号桥",
+        "source_values": {
+          "桩号": "10+731~11+655",
+          "长度": "924",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.85",
+          "倾角/度": "2.8",
+          "口宽": "6.5",
+          "边坡": "1",
+          "流量": "13.1",
+          "水深": "2.188",
+          "流速": "1.2",
+          "工程措施": "U改梯，h+1.0",
+          "备注": "梯形、15号桥"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.85,
+          0,
+          0,
+          2.85
+        ],
+        "cumulative_distances": [
+          0,
+          2.85,
+          3.65,
+          6.5
+        ],
+        "segment_distances": [
+          2.85,
+          0.8,
+          2.85
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.85
+            ],
+            [
+              2.85,
+              0
+            ],
+            [
+              3.65,
+              0
+            ],
+            [
+              6.5,
+              2.85
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 15,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_015",
+        "segment_id": 14,
+        "segment_index": 0,
+        "chainage": "11+655~13+875",
+        "chainage_start_m": 11655.0,
+        "chainage_end_m": 13875.0,
+        "river_distance": 11655.0,
+        "source_record_index": 15,
+        "length_m": 2220.0,
+        "channel_height_m": 2.4,
+        "inclination_deg": null,
+        "top_width_m": 6.09,
+        "side_slope": 1.0,
+        "design_flow_m3s": 6.9,
+        "design_water_depth_m": 1.703,
+        "design_velocity_mps": 1.024,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "D6.0",
+        "radius_m": null,
+        "diameter_m": 6.0,
+        "engineering_measures": "扩建，h+0.6",
+        "remarks": "弧底梯形渠",
+        "source_values": {
+          "桩号": "11+655~13+875",
+          "长度": "2220",
+          "纵坡": "1/4000",
+          "半径": "D6.0",
+          "渠高": "2.4",
+          "倾角/度": "",
+          "口宽": "6.09",
+          "边坡": "1",
+          "流量": "6.9",
+          "水深": "1.703",
+          "流速": "1.024",
+          "工程措施": "扩建，h+0.6",
+          "备注": "弧底梯形渠"
+        },
+        "section_type": "arc_bottom_trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "半径栏为D标记，整理为直径；保留原文，未替换为半径",
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 16,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_016",
+        "segment_id": 15,
+        "segment_index": 0,
+        "chainage": "13+875~14+775",
+        "chainage_start_m": 13875.0,
+        "chainage_end_m": 14775.0,
+        "river_distance": 13875.0,
+        "source_record_index": 16,
+        "length_m": 900.0,
+        "channel_height_m": 2.3,
+        "inclination_deg": null,
+        "top_width_m": 6.09,
+        "side_slope": 1.0,
+        "design_flow_m3s": 6.9,
+        "design_water_depth_m": 1.703,
+        "design_velocity_mps": 1.024,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "D6.0",
+        "radius_m": null,
+        "diameter_m": 6.0,
+        "engineering_measures": "扩建，h+0.6",
+        "remarks": "弧底梯形渠",
+        "source_values": {
+          "桩号": "13+875~14+775",
+          "长度": "900",
+          "纵坡": "1/4000",
+          "半径": "D6.0",
+          "渠高": "2.3",
+          "倾角/度": "",
+          "口宽": "6.09",
+          "边坡": "1",
+          "流量": "6.9",
+          "水深": "1.703",
+          "流速": "1.024",
+          "工程措施": "扩建，h+0.6",
+          "备注": "弧底梯形渠"
+        },
+        "section_type": "arc_bottom_trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "半径栏为D标记，整理为直径；保留原文，未替换为半径",
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 17,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_017",
+        "segment_id": 16,
+        "segment_index": 0,
+        "chainage": "14+775~15+080",
+        "chainage_start_m": 14775.0,
+        "chainage_end_m": 15080.0,
+        "river_distance": 14775.0,
+        "source_record_index": 17,
+        "length_m": 305.0,
+        "channel_height_m": 2.35,
+        "inclination_deg": null,
+        "top_width_m": 6.09,
+        "side_slope": 1.0,
+        "design_flow_m3s": 6.9,
+        "design_water_depth_m": 1.703,
+        "design_velocity_mps": 1.024,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "D6.0",
+        "radius_m": null,
+        "diameter_m": 6.0,
+        "engineering_measures": "扩建，h+0.6",
+        "remarks": "弧底梯形渠富家岭",
+        "source_values": {
+          "桩号": "14+775~15+080",
+          "长度": "305",
+          "纵坡": "1/4000",
+          "半径": "D6.0",
+          "渠高": "2.35",
+          "倾角/度": "",
+          "口宽": "6.09",
+          "边坡": "1",
+          "流量": "6.9",
+          "水深": "1.703",
+          "流速": "1.024",
+          "工程措施": "扩建，h+0.6",
+          "备注": "弧底梯形渠富家岭"
+        },
+        "section_type": "arc_bottom_trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "半径栏为D标记，整理为直径；保留原文，未替换为半径",
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 18,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_018",
+        "segment_id": 17,
+        "segment_index": 0,
+        "chainage": "15+080~18+760",
+        "chainage_start_m": 15080.0,
+        "chainage_end_m": 18760.0,
+        "river_distance": 15080.0,
+        "source_record_index": 18,
+        "length_m": 3680.0,
+        "channel_height_m": 2.35,
+        "inclination_deg": null,
+        "top_width_m": 5.65,
+        "side_slope": 1.0,
+        "design_flow_m3s": 6.2,
+        "design_water_depth_m": 1.689,
+        "design_velocity_mps": 1.0,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "D5.2",
+        "radius_m": null,
+        "diameter_m": 5.2,
+        "engineering_measures": "扩建，h+0.6",
+        "remarks": "弧底梯形渠",
+        "source_values": {
+          "桩号": "15+080~18+760",
+          "长度": "3680",
+          "纵坡": "1/4000",
+          "半径": "D5.2",
+          "渠高": "2.35",
+          "倾角/度": "",
+          "口宽": "5.65",
+          "边坡": "1",
+          "流量": "6.2",
+          "水深": "1.689",
+          "流速": "1",
+          "工程措施": "扩建，h+0.6",
+          "备注": "弧底梯形渠"
+        },
+        "section_type": "arc_bottom_trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "半径栏为D标记，整理为直径；保留原文，未替换为半径",
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 19,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_019",
+        "segment_id": 18,
+        "segment_index": 0,
+        "chainage": "18+760~19+110",
+        "chainage_start_m": 18760.0,
+        "chainage_end_m": 19110.0,
+        "river_distance": 18760.0,
+        "source_record_index": 19,
+        "length_m": 350.0,
+        "channel_height_m": 2.2,
+        "inclination_deg": 2.5,
+        "top_width_m": 7.0,
+        "side_slope": 1.0,
+        "design_flow_m3s": 6.2,
+        "design_water_depth_m": 1.547,
+        "design_velocity_mps": 1.981,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗",
+        "remarks": "梯形渠、一级路",
+        "source_values": {
+          "桩号": "18+760~19+110",
+          "长度": "350",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.2",
+          "倾角/度": "2.5",
+          "口宽": "7",
+          "边坡": "1",
+          "流量": "6.2",
+          "水深": "1.547",
+          "流速": "1.981",
+          "工程措施": "防渗",
+          "备注": "梯形渠、一级路"
+        },
+        "section_type": "trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.2,
+          0,
+          0,
+          2.2
+        ],
+        "cumulative_distances": [
+          0,
+          2.2,
+          4.8,
+          7.0
+        ],
+        "segment_distances": [
+          2.2,
+          2.6,
+          2.2
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.2
+            ],
+            [
+              2.2,
+              0
+            ],
+            [
+              4.8,
+              0
+            ],
+            [
+              7.0,
+              2.2
+            ]
+          ],
+          "method": "对称梯形假设；边坡按水平/垂直解释；底宽=口宽-2*边坡*渠高；未将倾角字段改作底宽",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 20,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_020",
+        "segment_id": 19,
+        "segment_index": 0,
+        "chainage": "19+110~20+600",
+        "chainage_start_m": 19110.0,
+        "chainage_end_m": 20600.0,
+        "river_distance": 19110.0,
+        "source_record_index": 20,
+        "length_m": 1490.0,
+        "channel_height_m": 2.65,
+        "inclination_deg": null,
+        "top_width_m": 5.65,
+        "side_slope": 1.0,
+        "design_flow_m3s": 6.2,
+        "design_water_depth_m": 1.689,
+        "design_velocity_mps": 1.0,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "D5.2",
+        "radius_m": null,
+        "diameter_m": 5.2,
+        "engineering_measures": "扩建，h+0.6",
+        "remarks": "弧底梯形渠",
+        "source_values": {
+          "桩号": "19+110~20+600",
+          "长度": "1490",
+          "纵坡": "1/4000",
+          "半径": "D5.2",
+          "渠高": "2.65",
+          "倾角/度": "",
+          "口宽": "5.65",
+          "边坡": "1",
+          "流量": "6.2",
+          "水深": "1.689",
+          "流速": "1",
+          "工程措施": "扩建，h+0.6",
+          "备注": "弧底梯形渠"
+        },
+        "section_type": "arc_bottom_trapezoid",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "半径栏为D标记，整理为直径；保留原文，未替换为半径",
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 21,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_021",
+        "segment_id": 20,
+        "segment_index": 0,
+        "chainage": "20+600~20+750",
+        "chainage_start_m": 20600.0,
+        "chainage_end_m": 20750.0,
+        "river_distance": 20600.0,
+        "source_record_index": 21,
+        "length_m": 150.0,
+        "channel_height_m": 2.3,
+        "inclination_deg": null,
+        "top_width_m": 3.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 6.2,
+        "design_water_depth_m": 1.764,
+        "design_velocity_mps": 0.976,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗+清，h+0.6",
+        "remarks": "暗改明，矩形",
+        "source_values": {
+          "桩号": "20+600~20+750",
+          "长度": "150",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.3",
+          "倾角/度": "",
+          "口宽": "3.6",
+          "边坡": "0",
+          "流量": "6.2",
+          "水深": "1.764",
+          "流速": "0.976",
+          "工程措施": "防渗+清，h+0.6",
+          "备注": "暗改明，矩形"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.3,
+          0,
+          0,
+          2.3
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          3.6,
+          3.6
+        ],
+        "segment_distances": [
+          0,
+          3.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.3
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              3.6,
+              0
+            ],
+            [
+              3.6,
+              2.3
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 22,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_022",
+        "segment_id": 21,
+        "segment_index": 0,
+        "chainage": "20+750~21+100",
+        "chainage_start_m": 20750.0,
+        "chainage_end_m": 21100.0,
+        "river_distance": 20750.0,
+        "source_record_index": 22,
+        "length_m": 350.0,
+        "channel_height_m": 2.9,
+        "inclination_deg": null,
+        "top_width_m": 3.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 6.2,
+        "design_water_depth_m": 1.764,
+        "design_velocity_mps": 0.976,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗",
+        "remarks": "暗改明，矩形",
+        "source_values": {
+          "桩号": "20+750~21+100",
+          "长度": "350",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.9",
+          "倾角/度": "",
+          "口宽": "3.6",
+          "边坡": "0",
+          "流量": "6.2",
+          "水深": "1.764",
+          "流速": "0.976",
+          "工程措施": "防渗",
+          "备注": "暗改明，矩形"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.9,
+          0,
+          0,
+          2.9
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          3.6,
+          3.6
+        ],
+        "segment_distances": [
+          0,
+          3.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.9
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              3.6,
+              0
+            ],
+            [
+              3.6,
+              2.9
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 23,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_023",
+        "segment_id": 22,
+        "segment_index": 0,
+        "chainage": "21+100~22+162",
+        "chainage_start_m": 21100.0,
+        "chainage_end_m": 22162.0,
+        "river_distance": 21100.0,
+        "source_record_index": 23,
+        "length_m": 1062.0,
+        "channel_height_m": 2.3,
+        "inclination_deg": null,
+        "top_width_m": 3.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 6.2,
+        "design_water_depth_m": 1.764,
+        "design_velocity_mps": 0.976,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.6",
+        "remarks": "暗改明，矩形",
+        "source_values": {
+          "桩号": "21+100~22+162",
+          "长度": "1062",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.3",
+          "倾角/度": "",
+          "口宽": "3.6",
+          "边坡": "0",
+          "流量": "6.2",
+          "水深": "1.764",
+          "流速": "0.976",
+          "工程措施": "防渗，h+0.6",
+          "备注": "暗改明，矩形"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.3,
+          0,
+          0,
+          2.3
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          3.6,
+          3.6
+        ],
+        "segment_distances": [
+          0,
+          3.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.3
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              3.6,
+              0
+            ],
+            [
+              3.6,
+              2.3
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 24,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_024",
+        "segment_id": 23,
+        "segment_index": 0,
+        "chainage": "22+162~22+300",
+        "chainage_start_m": 22162.0,
+        "chainage_end_m": 22300.0,
+        "river_distance": 22162.0,
+        "source_record_index": 24,
+        "length_m": 138.0,
+        "channel_height_m": 2.9,
+        "inclination_deg": null,
+        "top_width_m": 3.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 6.2,
+        "design_water_depth_m": 1.764,
+        "design_velocity_mps": 0.976,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗",
+        "remarks": "暗改明，矩形",
+        "source_values": {
+          "桩号": "22+162~22+300",
+          "长度": "138",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.9",
+          "倾角/度": "",
+          "口宽": "3.6",
+          "边坡": "0",
+          "流量": "6.2",
+          "水深": "1.764",
+          "流速": "0.976",
+          "工程措施": "防渗",
+          "备注": "暗改明，矩形"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.9,
+          0,
+          0,
+          2.9
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          3.6,
+          3.6
+        ],
+        "segment_distances": [
+          0,
+          3.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.9
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              3.6,
+              0
+            ],
+            [
+              3.6,
+              2.9
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 25,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_025",
+        "segment_id": 24,
+        "segment_index": 0,
+        "chainage": "22+300~22+537",
+        "chainage_start_m": 22300.0,
+        "chainage_end_m": 22537.0,
+        "river_distance": 22300.0,
+        "source_record_index": 25,
+        "length_m": 237.0,
+        "channel_height_m": 2.3,
+        "inclination_deg": null,
+        "top_width_m": 3.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 6.2,
+        "design_water_depth_m": 1.764,
+        "design_velocity_mps": 0.976,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.6",
+        "remarks": "暗改明，矩形",
+        "source_values": {
+          "桩号": "22+300~22+537",
+          "长度": "237",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.3",
+          "倾角/度": "",
+          "口宽": "3.6",
+          "边坡": "0",
+          "流量": "6.2",
+          "水深": "1.764",
+          "流速": "0.976",
+          "工程措施": "防渗，h+0.6",
+          "备注": "暗改明，矩形"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.3,
+          0,
+          0,
+          2.3
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          3.6,
+          3.6
+        ],
+        "segment_distances": [
+          0,
+          3.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.3
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              3.6,
+              0
+            ],
+            [
+              3.6,
+              2.3
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 26,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_026",
+        "segment_id": 25,
+        "segment_index": 0,
+        "chainage": "22+537~23+537",
+        "chainage_start_m": 22537.0,
+        "chainage_end_m": 23537.0,
+        "river_distance": 22537.0,
+        "source_record_index": 26,
+        "length_m": 1000.0,
+        "channel_height_m": 2.8,
+        "inclination_deg": null,
+        "top_width_m": 3.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 6.2,
+        "design_water_depth_m": 1.764,
+        "design_velocity_mps": 0.976,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗",
+        "remarks": "已成隧洞",
+        "source_values": {
+          "桩号": "22+537~23+537",
+          "长度": "1000",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.8",
+          "倾角/度": "",
+          "口宽": "3.6",
+          "边坡": "0",
+          "流量": "6.2",
+          "水深": "1.764",
+          "流速": "0.976",
+          "工程措施": "防渗",
+          "备注": "已成隧洞"
+        },
+        "section_type": "tunnel",
+        "structure_type": "tunnel",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "缺少可唯一确定横断面离散点的数据，未生成曲线",
+          "未据口宽和渠高假定隧洞顶拱形状"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 27,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_027",
+        "segment_id": 26,
+        "segment_index": 0,
+        "chainage": "23+537~23+591",
+        "chainage_start_m": 23537.0,
+        "chainage_end_m": 23591.0,
+        "river_distance": 23537.0,
+        "source_record_index": 27,
+        "length_m": 54.0,
+        "channel_height_m": 2.3,
+        "inclination_deg": null,
+        "top_width_m": 3.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 6.2,
+        "design_water_depth_m": 1.764,
+        "design_velocity_mps": 0.976,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.6",
+        "remarks": "暗改明、矩形刘原闸",
+        "source_values": {
+          "桩号": "23+537~23+591",
+          "长度": "54",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.3",
+          "倾角/度": "",
+          "口宽": "3.6",
+          "边坡": "0",
+          "流量": "6.2",
+          "水深": "1.764",
+          "流速": "0.976",
+          "工程措施": "防渗，h+0.6",
+          "备注": "暗改明、矩形刘原闸"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.3,
+          0,
+          0,
+          2.3
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          3.6,
+          3.6
+        ],
+        "segment_distances": [
+          0,
+          3.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.3
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              3.6,
+              0
+            ],
+            [
+              3.6,
+              2.3
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 28,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_028",
+        "segment_id": 27,
+        "segment_index": 0,
+        "chainage": "23+591~23+875",
+        "chainage_start_m": 23591.0,
+        "chainage_end_m": 23875.0,
+        "river_distance": 23591.0,
+        "source_record_index": 28,
+        "length_m": 284.0,
+        "channel_height_m": 2.4,
+        "inclination_deg": null,
+        "top_width_m": 3.9,
+        "side_slope": 0.0,
+        "design_flow_m3s": 3.7,
+        "design_water_depth_m": 1.126,
+        "design_velocity_mps": 0.843,
+        "longitudinal_slope_text": "1/3460",
+        "longitudinal_slope": 0.00028901734104046245,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗， h+0.6",
+        "remarks": "矩形渠",
+        "source_values": {
+          "桩号": "23+591~23+875",
+          "长度": "284",
+          "纵坡": "1/3460",
+          "半径": "",
+          "渠高": "2.4",
+          "倾角/度": "",
+          "口宽": "3.9",
+          "边坡": "0",
+          "流量": "3.7",
+          "水深": "1.126",
+          "流速": "0.843",
+          "工程措施": "防渗， h+0.6",
+          "备注": "矩形渠"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.4,
+          0,
+          0,
+          2.4
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          3.9,
+          3.9
+        ],
+        "segment_distances": [
+          0,
+          3.9,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.4
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              3.9,
+              0
+            ],
+            [
+              3.9,
+              2.4
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 29,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_029",
+        "segment_id": 28,
+        "segment_index": 0,
+        "chainage": "23+875~26+200",
+        "chainage_start_m": 23875.0,
+        "chainage_end_m": 26200.0,
+        "river_distance": 23875.0,
+        "source_record_index": 29,
+        "length_m": 2325.0,
+        "channel_height_m": 2.4,
+        "inclination_deg": 17.0,
+        "top_width_m": 3.62,
+        "side_slope": null,
+        "design_flow_m3s": 3.7,
+        "design_water_depth_m": 1.497,
+        "design_velocity_mps": 0.96,
+        "longitudinal_slope_text": "1/3460",
+        "longitudinal_slope": 0.00028901734104046245,
+        "radius_text": "D3.4",
+        "radius_m": null,
+        "diameter_m": 3.4,
+        "engineering_measures": "防渗，h+0.6",
+        "remarks": "U形渠",
+        "source_values": {
+          "桩号": "23+875~26+200",
+          "长度": "2325",
+          "纵坡": "1/3460",
+          "半径": "D3.4",
+          "渠高": "2.4",
+          "倾角/度": "17",
+          "口宽": "3.62",
+          "边坡": "",
+          "流量": "3.7",
+          "水深": "1.497",
+          "流速": "0.96",
+          "工程措施": "防渗，h+0.6",
+          "备注": "U形渠"
+        },
+        "section_type": "u_shaped",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "半径栏为D标记，整理为直径；保留原文，未替换为半径",
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 30,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_030",
+        "segment_id": 29,
+        "segment_index": 0,
+        "chainage": "26+200~27+883",
+        "chainage_start_m": 26200.0,
+        "chainage_end_m": 27883.0,
+        "river_distance": 26200.0,
+        "source_record_index": 30,
+        "length_m": 1683.0,
+        "channel_height_m": 2.4,
+        "inclination_deg": 17.0,
+        "top_width_m": 3.47,
+        "side_slope": null,
+        "design_flow_m3s": 3.7,
+        "design_water_depth_m": 1.542,
+        "design_velocity_mps": 0.961,
+        "longitudinal_slope_text": "1/3460",
+        "longitudinal_slope": 0.00028901734104046245,
+        "radius_text": "D3.2",
+        "radius_m": null,
+        "diameter_m": 3.2,
+        "engineering_measures": "防渗，h+0.6",
+        "remarks": "U形渠",
+        "source_values": {
+          "桩号": "26+200~27+883",
+          "长度": "1683",
+          "纵坡": "1/3460",
+          "半径": "D3.2",
+          "渠高": "2.4",
+          "倾角/度": "17",
+          "口宽": "3.47",
+          "边坡": "",
+          "流量": "3.7",
+          "水深": "1.542",
+          "流速": "0.961",
+          "工程措施": "防渗，h+0.6",
+          "备注": "U形渠"
+        },
+        "section_type": "u_shaped",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "半径栏为D标记，整理为直径；保留原文，未替换为半径",
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 31,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_031",
+        "segment_id": 30,
+        "segment_index": 0,
+        "chainage": "27+883~28+472",
+        "chainage_start_m": 27883.0,
+        "chainage_end_m": 28472.0,
+        "river_distance": 27883.0,
+        "source_record_index": 31,
+        "length_m": 589.0,
+        "channel_height_m": 2.0,
+        "inclination_deg": null,
+        "top_width_m": 2.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 3.7,
+        "design_water_depth_m": 1.574,
+        "design_velocity_mps": 0.904,
+        "longitudinal_slope_text": "1/3460",
+        "longitudinal_slope": 0.00028901734104046245,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗",
+        "remarks": "已成隧洞",
+        "source_values": {
+          "桩号": "27+883~28+472",
+          "长度": "589",
+          "纵坡": "1/3460",
+          "半径": "",
+          "渠高": "2",
+          "倾角/度": "",
+          "口宽": "2.6",
+          "边坡": "0",
+          "流量": "3.7",
+          "水深": "1.574",
+          "流速": "0.904",
+          "工程措施": "防渗",
+          "备注": "已成隧洞"
+        },
+        "section_type": "tunnel",
+        "structure_type": "tunnel",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "缺少可唯一确定横断面离散点的数据，未生成曲线",
+          "未据口宽和渠高假定隧洞顶拱形状"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 32,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_032",
+        "segment_id": 31,
+        "segment_index": 0,
+        "chainage": "28+472~28+520",
+        "chainage_start_m": 28472.0,
+        "chainage_end_m": 28520.0,
+        "river_distance": 28472.0,
+        "source_record_index": 32,
+        "length_m": 48.0,
+        "channel_height_m": 2.4,
+        "inclination_deg": 17.0,
+        "top_width_m": 3.47,
+        "side_slope": null,
+        "design_flow_m3s": 3.7,
+        "design_water_depth_m": 1.542,
+        "design_velocity_mps": 0.961,
+        "longitudinal_slope_text": "1/3460",
+        "longitudinal_slope": 0.00028901734104046245,
+        "radius_text": "D3.2",
+        "radius_m": null,
+        "diameter_m": 3.2,
+        "engineering_measures": "防渗，h+0.6",
+        "remarks": "U形渠",
+        "source_values": {
+          "桩号": "28+472~28+520",
+          "长度": "48",
+          "纵坡": "1/3460",
+          "半径": "D3.2",
+          "渠高": "2.4",
+          "倾角/度": "17",
+          "口宽": "3.47",
+          "边坡": "",
+          "流量": "3.7",
+          "水深": "1.542",
+          "流速": "0.961",
+          "工程措施": "防渗，h+0.6",
+          "备注": "U形渠"
+        },
+        "section_type": "u_shaped",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "半径栏为D标记，整理为直径；保留原文，未替换为半径",
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 33,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_033",
+        "segment_id": 32,
+        "segment_index": 0,
+        "chainage": "28+520~28+577",
+        "chainage_start_m": 28520.0,
+        "chainage_end_m": 28577.0,
+        "river_distance": 28520.0,
+        "source_record_index": 33,
+        "length_m": 57.0,
+        "channel_height_m": 2.1,
+        "inclination_deg": null,
+        "top_width_m": 2.5,
+        "side_slope": 0.0,
+        "design_flow_m3s": 3.7,
+        "design_water_depth_m": 1.736,
+        "design_velocity_mps": 0.853,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗",
+        "remarks": "矩形-阳院坝",
+        "source_values": {
+          "桩号": "28+520~28+577",
+          "长度": "57",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.1",
+          "倾角/度": "",
+          "口宽": "2.5",
+          "边坡": "0",
+          "流量": "3.7",
+          "水深": "1.736",
+          "流速": "0.853",
+          "工程措施": "防渗",
+          "备注": "矩形-阳院坝"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.1,
+          0,
+          0,
+          2.1
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          2.5,
+          2.5
+        ],
+        "segment_distances": [
+          0,
+          2.5,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.1
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              2.5,
+              0
+            ],
+            [
+              2.5,
+              2.1
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 34,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_034",
+        "segment_id": 33,
+        "segment_index": 0,
+        "chainage": "28+577~28+590",
+        "chainage_start_m": 28577.0,
+        "chainage_end_m": 28590.0,
+        "river_distance": 28577.0,
+        "source_record_index": 34,
+        "length_m": 13.0,
+        "channel_height_m": null,
+        "inclination_deg": null,
+        "top_width_m": null,
+        "side_slope": null,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": null,
+        "design_velocity_mps": null,
+        "longitudinal_slope_text": "1/500",
+        "longitudinal_slope": 0.002,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.6",
+        "remarks": "矩形渐变段",
+        "source_values": {
+          "桩号": "28+577~28+590",
+          "长度": "13",
+          "纵坡": "1/500",
+          "半径": "",
+          "渠高": "",
+          "倾角/度": "",
+          "口宽": "",
+          "边坡": "",
+          "流量": "3.2",
+          "水深": "",
+          "流速": "",
+          "工程措施": "防渗，h+0.6",
+          "备注": "矩形渐变段"
+        },
+        "section_type": "transition",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 35,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_035",
+        "segment_id": 34,
+        "segment_index": 0,
+        "chainage": "28+590~28+750",
+        "chainage_start_m": 28590.0,
+        "chainage_end_m": 28750.0,
+        "river_distance": 28590.0,
+        "source_record_index": 35,
+        "length_m": 160.0,
+        "channel_height_m": null,
+        "inclination_deg": null,
+        "top_width_m": null,
+        "side_slope": null,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": null,
+        "design_velocity_mps": null,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "",
+        "remarks": "涵管DN800*2",
+        "source_values": {
+          "桩号": "28+590~28+750",
+          "长度": "160",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "",
+          "倾角/度": "",
+          "口宽": "",
+          "边坡": "",
+          "流量": "3.2",
+          "水深": "",
+          "流速": "",
+          "工程措施": "",
+          "备注": "涵管DN800*2"
+        },
+        "section_type": "culvert",
+        "structure_type": "culvert",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 36,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_036",
+        "segment_id": 35,
+        "segment_index": 0,
+        "chainage": "28+750~28+801",
+        "chainage_start_m": 28750.0,
+        "chainage_end_m": 28801.0,
+        "river_distance": 28750.0,
+        "source_record_index": 36,
+        "length_m": 51.0,
+        "channel_height_m": 2.0,
+        "inclination_deg": null,
+        "top_width_m": 2.6,
+        "side_slope": null,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": 1.489,
+        "design_velocity_mps": 0.827,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.6",
+        "remarks": "矩形",
+        "source_values": {
+          "桩号": "28+750~28+801",
+          "长度": "51",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2",
+          "倾角/度": "",
+          "口宽": "2.6",
+          "边坡": "",
+          "流量": "3.2",
+          "水深": "1.489",
+          "流速": "0.827",
+          "工程措施": "防渗，h+0.6",
+          "备注": "矩形"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.0,
+          0,
+          0,
+          2.0
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          2.6,
+          2.6
+        ],
+        "segment_distances": [
+          0,
+          2.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              2.6,
+              0
+            ],
+            [
+              2.6,
+              2.0
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 37,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_037",
+        "segment_id": 36,
+        "segment_index": 0,
+        "chainage": "28+801~29+385",
+        "chainage_start_m": 28801.0,
+        "chainage_end_m": 29385.0,
+        "river_distance": 28801.0,
+        "source_record_index": 37,
+        "length_m": 584.0,
+        "channel_height_m": 1.75,
+        "inclination_deg": null,
+        "top_width_m": 2.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": 1.489,
+        "design_velocity_mps": 0.827,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "",
+        "remarks": "隧洞",
+        "source_values": {
+          "桩号": "28+801~29+385",
+          "长度": "584",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "1.75",
+          "倾角/度": "",
+          "口宽": "2.6",
+          "边坡": "0",
+          "流量": "3.2",
+          "水深": "1.489",
+          "流速": "0.827",
+          "工程措施": "",
+          "备注": "隧洞"
+        },
+        "section_type": "tunnel",
+        "structure_type": "tunnel",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "缺少可唯一确定横断面离散点的数据，未生成曲线",
+          "未据口宽和渠高假定隧洞顶拱形状"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 38,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_038",
+        "segment_id": 37,
+        "segment_index": 0,
+        "chainage": "29+385~29+422",
+        "chainage_start_m": 29385.0,
+        "chainage_end_m": 29422.0,
+        "river_distance": 29385.0,
+        "source_record_index": 38,
+        "length_m": 37.0,
+        "channel_height_m": 2.15,
+        "inclination_deg": null,
+        "top_width_m": 2.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": 1.489,
+        "design_velocity_mps": 0.827,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.6",
+        "remarks": "矩形",
+        "source_values": {
+          "桩号": "29+385~29+422",
+          "长度": "37",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.15",
+          "倾角/度": "",
+          "口宽": "2.6",
+          "边坡": "0",
+          "流量": "3.2",
+          "水深": "1.489",
+          "流速": "0.827",
+          "工程措施": "防渗，h+0.6",
+          "备注": "矩形"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.15,
+          0,
+          0,
+          2.15
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          2.6,
+          2.6
+        ],
+        "segment_distances": [
+          0,
+          2.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.15
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              2.6,
+              0
+            ],
+            [
+              2.6,
+              2.15
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 39,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_039",
+        "segment_id": 38,
+        "segment_index": 0,
+        "chainage": "29+422~29+522",
+        "chainage_start_m": 29422.0,
+        "chainage_end_m": 29522.0,
+        "river_distance": 29422.0,
+        "source_record_index": 39,
+        "length_m": 100.0,
+        "channel_height_m": null,
+        "inclination_deg": null,
+        "top_width_m": null,
+        "side_slope": null,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": null,
+        "design_velocity_mps": null,
+        "longitudinal_slope_text": "1/500",
+        "longitudinal_slope": 0.002,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "",
+        "remarks": "涵管DN00*2",
+        "source_values": {
+          "桩号": "29+422~29+522",
+          "长度": "100",
+          "纵坡": "1/500",
+          "半径": "",
+          "渠高": "",
+          "倾角/度": "",
+          "口宽": "",
+          "边坡": "",
+          "流量": "3.2",
+          "水深": "",
+          "流速": "",
+          "工程措施": "",
+          "备注": "涵管DN00*2"
+        },
+        "section_type": "culvert",
+        "structure_type": "culvert",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "原表DN00疑似缺位，未修正",
+          "缺少可唯一确定横断面离散点的数据，未生成曲线"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 40,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_040",
+        "segment_id": 39,
+        "segment_index": 0,
+        "chainage": "29+522~29+856",
+        "chainage_start_m": 29522.0,
+        "chainage_end_m": 29856.0,
+        "river_distance": 29522.0,
+        "source_record_index": 40,
+        "length_m": 334.0,
+        "channel_height_m": 2.1,
+        "inclination_deg": null,
+        "top_width_m": 2.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": 1.489,
+        "design_velocity_mps": 0.827,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗，h+0.6",
+        "remarks": "矩形",
+        "source_values": {
+          "桩号": "29+522~29+856",
+          "长度": "334",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.1",
+          "倾角/度": "",
+          "口宽": "2.6",
+          "边坡": "0",
+          "流量": "3.2",
+          "水深": "1.489",
+          "流速": "0.827",
+          "工程措施": "防渗，h+0.6",
+          "备注": "矩形"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.1,
+          0,
+          0,
+          2.1
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          2.6,
+          2.6
+        ],
+        "segment_distances": [
+          0,
+          2.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.1
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              2.6,
+              0
+            ],
+            [
+              2.6,
+              2.1
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 41,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_041",
+        "segment_id": 40,
+        "segment_index": 0,
+        "chainage": "29+856~30+238",
+        "chainage_start_m": 29856.0,
+        "chainage_end_m": 30238.0,
+        "river_distance": 29856.0,
+        "source_record_index": 41,
+        "length_m": 382.0,
+        "channel_height_m": 1.58,
+        "inclination_deg": null,
+        "top_width_m": 2.57,
+        "side_slope": 0.0,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": 1.489,
+        "design_velocity_mps": 0.827,
+        "longitudinal_slope_text": "1/1000",
+        "longitudinal_slope": 0.001,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "支护",
+        "remarks": "隧洞",
+        "source_values": {
+          "桩号": "29+856~30+238",
+          "长度": "382",
+          "纵坡": "1/1000",
+          "半径": "",
+          "渠高": "1.58",
+          "倾角/度": "",
+          "口宽": "2.57",
+          "边坡": "0",
+          "流量": "3.2",
+          "水深": "1.489",
+          "流速": "0.827",
+          "工程措施": "支护",
+          "备注": "隧洞"
+        },
+        "section_type": "tunnel",
+        "structure_type": "tunnel",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "缺少可唯一确定横断面离散点的数据，未生成曲线",
+          "未据口宽和渠高假定隧洞顶拱形状"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 42,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_042",
+        "segment_id": 41,
+        "segment_index": 0,
+        "chainage": "30+238~30+295.5",
+        "chainage_start_m": 30238.0,
+        "chainage_end_m": 30295.5,
+        "river_distance": 30238.0,
+        "source_record_index": 42,
+        "length_m": 57.5,
+        "channel_height_m": 2.1,
+        "inclination_deg": null,
+        "top_width_m": 2.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": 1.489,
+        "design_velocity_mps": 0.827,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "扩建2.6，h+0.6",
+        "remarks": "矩形",
+        "source_values": {
+          "桩号": "30+238~30+295.5",
+          "长度": "57.5",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2.1",
+          "倾角/度": "",
+          "口宽": "2.6",
+          "边坡": "0",
+          "流量": "3.2",
+          "水深": "1.489",
+          "流速": "0.827",
+          "工程措施": "扩建2.6，h+0.6",
+          "备注": "矩形"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.1,
+          0,
+          0,
+          2.1
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          2.6,
+          2.6
+        ],
+        "segment_distances": [
+          0,
+          2.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.1
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              2.6,
+              0
+            ],
+            [
+              2.6,
+              2.1
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 43,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_043",
+        "segment_id": 42,
+        "segment_index": 0,
+        "chainage": "30+295.5~30+389",
+        "chainage_start_m": 30295.5,
+        "chainage_end_m": 30389.0,
+        "river_distance": 30295.5,
+        "source_record_index": 43,
+        "length_m": 93.5,
+        "channel_height_m": 1.8,
+        "inclination_deg": null,
+        "top_width_m": 2.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": 1.489,
+        "design_velocity_mps": 0.827,
+        "longitudinal_slope_text": "1/1000",
+        "longitudinal_slope": 0.001,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "扩建2.6*1.8",
+        "remarks": "隧洞",
+        "source_values": {
+          "桩号": "30+295.5~30+389",
+          "长度": "93.5",
+          "纵坡": "1/1000",
+          "半径": "",
+          "渠高": "1.8",
+          "倾角/度": "",
+          "口宽": "2.6",
+          "边坡": "0",
+          "流量": "3.2",
+          "水深": "1.489",
+          "流速": "0.827",
+          "工程措施": "扩建2.6*1.8",
+          "备注": "隧洞"
+        },
+        "section_type": "tunnel",
+        "structure_type": "tunnel",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [],
+        "cumulative_distances": [],
+        "segment_distances": [],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": null,
+          "method": null,
+          "is_measured_profile": false
+        },
+        "data_notes": [
+          "缺少可唯一确定横断面离散点的数据，未生成曲线",
+          "未据口宽和渠高假定隧洞顶拱形状"
+        ]
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 44,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_044",
+        "segment_id": 43,
+        "segment_index": 0,
+        "chainage": "30+389~30+551",
+        "chainage_start_m": 30389.0,
+        "chainage_end_m": 30551.0,
+        "river_distance": 30389.0,
+        "source_record_index": 44,
+        "length_m": 162.0,
+        "channel_height_m": 2.0,
+        "inclination_deg": null,
+        "top_width_m": 2.5,
+        "side_slope": 0.0,
+        "design_flow_m3s": 3.2,
+        "design_water_depth_m": 1.551,
+        "design_velocity_mps": 0.825,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "改建，h+0.6",
+        "remarks": "矩形",
+        "source_values": {
+          "桩号": "30+389~30+551",
+          "长度": "162",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "2",
+          "倾角/度": "",
+          "口宽": "2.5",
+          "边坡": "0",
+          "流量": "3.2",
+          "水深": "1.551",
+          "流速": "0.825",
+          "工程措施": "改建，h+0.6",
+          "备注": "矩形"
+        },
+        "section_type": "rectangle",
+        "structure_type": "canal",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          2.0,
+          0,
+          0,
+          2.0
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          2.5,
+          2.5
+        ],
+        "segment_distances": [
+          0,
+          2.5,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              2.0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              2.5,
+              0
+            ],
+            [
+              2.5,
+              2.0
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    },
+    {
+      "type": "Feature",
+      "id": 45,
+      "properties": {
+        "canal": "大禹渡灌区总干渠",
+        "Name": "DYD_045",
+        "segment_id": 44,
+        "segment_index": 0,
+        "chainage": "30+551~30+750",
+        "chainage_start_m": 30551.0,
+        "chainage_end_m": 30750.0,
+        "river_distance": 30551.0,
+        "source_record_index": 45,
+        "length_m": 199.0,
+        "channel_height_m": 1.4,
+        "inclination_deg": null,
+        "top_width_m": 2.6,
+        "side_slope": 0.0,
+        "design_flow_m3s": 1.9,
+        "design_water_depth_m": 1.01,
+        "design_velocity_mps": 0.724,
+        "longitudinal_slope_text": "1/4000",
+        "longitudinal_slope": 0.00025,
+        "radius_text": "",
+        "radius_m": null,
+        "diameter_m": null,
+        "engineering_measures": "防渗",
+        "remarks": "渡槽",
+        "source_values": {
+          "桩号": "30+551~30+750",
+          "长度": "199",
+          "纵坡": "1/4000",
+          "半径": "",
+          "渠高": "1.4",
+          "倾角/度": "",
+          "口宽": "2.6",
+          "边坡": "0",
+          "流量": "1.9",
+          "水深": "1.01",
+          "流速": "0.724",
+          "工程措施": "防渗",
+          "备注": "渡槽"
+        },
+        "section_type": "rectangle",
+        "structure_type": "flume",
+        "x": null,
+        "y": null,
+        "z": null,
+        "z_list": [
+          1.4,
+          0,
+          0,
+          1.4
+        ],
+        "cumulative_distances": [
+          0,
+          0,
+          2.6,
+          2.6
+        ],
+        "segment_distances": [
+          0,
+          2.6,
+          0.0
+        ],
+        "projected_points_xyz": [],
+        "local_cross_section": {
+          "coordinate_system": "横断面局部坐标：最左端x=0，底部相对高程z=0，单位m",
+          "points_xz": [
+            [
+              0,
+              1.4
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              2.6,
+              0
+            ],
+            [
+              2.6,
+              1.4
+            ]
+          ],
+          "method": "由矩形口宽、渠高计算；底部相对高程设为0，不是绝对高程",
+          "is_measured_profile": false
+        },
+        "Flume": {
+          "n_a": null,
+          "xi_in": null,
+          "xi_out": null,
+          "xi_b": null,
+          "xi_c": null,
+          "xi_e": null,
+          "Q_d": 1.9,
+          "Q_max": null,
+          "Q_min": null,
+          "v_max": null,
+          "v_min": null,
+          "H_max": null,
+          "z_top": null
+        },
+        "data_notes": []
+      },
+      "geometry": null
+    }
+  ]
+}
