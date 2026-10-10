@@ -5,7 +5,7 @@ description: 维护OCIS-DA水动力流量、开度和外部尾水边界的配置
 
 # 水动力边界处理
 
-当前PID预热＋RK-MPC流程定位为**模型率定中的边界重建**。完整工作流由[OCIS-RK-MPC率定skill](../../../../OCIS-RK-MPC/skills/dayudu-calibration-validation/SKILL.md)维护；本skill负责真实边界接口、初态与时钟恢复、限幅触发、快照和守恒验证。不要将预测模型辨识等同于原生静态参数率定，或将历史回算等同于独立预测验证。
+当前PID预热＋RK-MPC流程定位为**模型率定中的边界重建**。完整工作流由[OCIS-RK-MPC率定skill](../../../../skills/dayudu-calibration-validation/SKILL.md)维护；本skill负责真实边界接口、初态与时钟恢复、限幅触发、快照和守恒验证。不要将预测模型辨识等同于原生静态参数率定，或将历史回算等同于独立预测验证。
 
 先读 `tools/README_tailwater_boundary.md` 获取JSON接口、时间序列与高程基准；重建老庄案例读 `tools/README_laozhuang_20pct.md`。绘图遵循相邻 `hydraulic-plotting/SKILL.md`。
 
