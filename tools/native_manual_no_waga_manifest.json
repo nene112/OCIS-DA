@@ -47,8 +47,22 @@
   {
     "name": "OcisMILPNet.dll",
     "source": "C:\\Users\\houvert\\.codex\\worktrees\\aggregation-continue\\ocismilpnet-mac-win-MAC2DELL\\build_manual_no_waga\\OcisMILPNet_dll\\Release\\OcisMILPNet.dll",
-    "sha256": "dfd726e39b37b6d2a311060664b63fd62aa3915ed72dd8a891fd162e29dcfacc",
-    "checkpoint_patch_applied": true
+    "sha256": "3cfa4675134601c4b2ae9e6e93de990b7863b6a5fa44e2ddbaf8ed9aaccfd4e4",
+    "checkpoint_patch_applied": true,
+    "section_lookup_applied": true,
+    "native_baseline_commit": "c75ab99",
+    "gate_width_separated": true,
+    "gate_topology_fixed": true,
+    "current_gate_flow_export": "gates_Q_current",
+    "tailwater_boundary_supported": true,
+    "tailwater_solver": "sediment segmented pool",
+    "tailwater_shared_flux": true,
+    "tailwater_exact_section_storage": true,
+    "named_snapshots_supported": true,
+    "snapshot_scope": "same solver object memory; no file serialization",
+    "snapshot_comparison_export": "compare_snapshot_sim",
+    "direct_flow_demand_preserved_when_limited": true,
+    "native_source_commit": "8a98c59522ccead9ff8ca9342af542e155dd2ca6"
   },
   {
     "name": "svml_dispmd.dll",

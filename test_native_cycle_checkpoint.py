@@ -10,17 +10,25 @@ parser=argparse.ArgumentParser();parser.add_argument('--cross-section',type=Path
 p=Path('data/dayudu').resolve()
 reach=da.discover_reaches(p)[0];cfg=da.AssimilationConfig(initial_water_depth=1.61);clients,copies=da._load_isolated_clients(None,1,da._build_runtime_config(p/'OCIS_dataConfig.json',p,reach,cfg),cfg);cl=clients[0]
 cl.set_outputfile_Label(0);cl.Auto_correct_endpoint();cl.Auto_correct_gates_calculationType()
-json_bed=None;cross_section_report={}
+json_bed=None;json_geometry=None;cross_section_report={}
 if args.cross_section:
  before_bed=json.loads(cl.get_stepdata_sim('node_zb'))
  before_width=json.loads(cl.get_stepdata_sim('node_Width'))
  before_slope=json.loads(cl.get_stepdata_sim('node_tanb'))
  cl.set_CrossSection(args.cross_section,0,44)
  json_bed=json.loads(cl.get_stepdata_sim('node_zb'))
- assert before_bed!=json_bed
- assert json.loads(cl.get_stepdata_sim('node_Width'))==before_width
- assert json.loads(cl.get_stepdata_sim('node_tanb'))==before_slope
- cross_section_report={'input':str(args.cross_section.resolve()),'before_bed':before_bed,'imported_bed':json_bed,'shape_unchanged':True}
+ is_table=json.loads(args.cross_section.read_text(encoding='utf-8-sig')).get('metadata',{}).get('format')=='ocis_section_tables_v1'
+ if is_table:
+  assert before_bed==json_bed
+  json_geometry={key:json.loads(cl.get_stepdata_sim(key)) for key in ['node_Width','node_tanb','node_section_id']}
+  assert any(json_geometry['node_section_id'])
+  cross_section_report=cl.get_cross_section_report()
+ else:
+  assert before_bed!=json_bed
+  assert json.loads(cl.get_stepdata_sim('node_Width'))==before_width
+  assert json.loads(cl.get_stepdata_sim('node_tanb'))==before_slope
+  cross_section_report={'shape_unchanged':True}
+ cross_section_report.update({'input':str(args.cross_section.resolve()),'before_bed':before_bed,'imported_bed':json_bed})
 
 idnames,names=da._parse_gate_info(cl.get_gate_info_sim());source=names[da._normalize_name('二级站出口')];gate=names[da._normalize_name('老庄节制闸')];div=names['d0']
 ctype=cl._dll.set_GatesFlow_calculationType_byID_sim;ctype.argtypes=[ctypes.c_void_p,ctypes.c_int,ctypes.c_int];ctype.restype=None
@@ -44,6 +52,8 @@ def execute(k,q,e):
  cl.set_GatesFlow_mu_byID_sim_multi(gate,{'Ues':.6,'Uef':.6})
  cl.stepSolver_sim_Roe_only_pool(k,0)
  if json_bed is not None:assert json.loads(cl.get_stepdata_sim('node_zb'))==json_bed, 'JSON bed reverted during hydraulic step'
+ if json_geometry is not None:
+  for key,value in json_geometry.items():assert json.loads(cl.get_stepdata_sim(key))==value, f'{key} reverted during hydraulic step'
  result={key:da._safe_model_data(cl,key) for key in ['gates_h1','gates_h2','gates_Q','gates_e']}
  for key in result:
   value=da._extract_gate_value(result[key],gate)
@@ -59,6 +69,8 @@ try:
   cl.set_states()
   assert clock()==before, ('clock rollback',k,before,clock())
   if json_bed is not None:assert json.loads(cl.get_stepdata_sim('node_zb'))==json_bed
+  if json_geometry is not None:
+   for key,value in json_geometry.items():assert json.loads(cl.get_stepdata_sim(key))==value, f'{key} reverted during rollback'
   alternate=execute(k,2.4,.5)
   assert alternate!=a, ('controls did not change result',k)
   cl.set_states()

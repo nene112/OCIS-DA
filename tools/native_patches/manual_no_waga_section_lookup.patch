@@ -1,0 +1,1814 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 877638c..01ff5cc 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -4,6 +4,9 @@ project(OcisMILPNet)
+ set(CMAKE_CXX_STANDARD 20)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ 
++add_executable(cross_section_lookup_test EXCLUDE_FROM_ALL tests/cross_section_lookup_test.cpp)
++target_include_directories(cross_section_lookup_test PRIVATE ${CMAKE_SOURCE_DIR}/src)
++
+ # Keep the MSVC source and execution character sets deterministic. This is
+ # applied at the root so executables, DLLs, and import tests use the same mode.
+ if(MSVC)
+@@ -17,6 +20,17 @@ endif()
+ 
+ # 包含子项目
+ add_subdirectory(OcisMILPNet_dll)
++get_target_property(SECTION_TEST_SOURCES OcisMILPNetDll SOURCES)
++list(REMOVE_ITEM SECTION_TEST_SOURCES "${CMAKE_SOURCE_DIR}/OcisMILPNet_dll/src/OcisMILPDll_export.cpp")
++get_target_property(SECTION_TEST_INCLUDES OcisMILPNetDll INCLUDE_DIRECTORIES)
++get_target_property(SECTION_TEST_LIBRARIES OcisMILPNetDll LINK_LIBRARIES)
++get_target_property(SECTION_TEST_DEFINITIONS OcisMILPNetDll COMPILE_DEFINITIONS)
++add_executable(cross_section_solver_test EXCLUDE_FROM_ALL tests/cross_section_solver_test.cpp ${SECTION_TEST_SOURCES})
++target_include_directories(cross_section_solver_test PRIVATE ${SECTION_TEST_INCLUDES})
++target_link_libraries(cross_section_solver_test PRIVATE ${SECTION_TEST_LIBRARIES})
++if(SECTION_TEST_DEFINITIONS)
++  target_compile_definitions(cross_section_solver_test PRIVATE ${SECTION_TEST_DEFINITIONS})
++endif()
+ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/OcisMILPNet_feedback_dll/CMakeLists.txt")
+   add_subdirectory(OcisMILPNet_feedback_dll)
+ endif()
+diff --git a/OcisMILPNet_dll/src/OcisMILPDll_export.cpp b/OcisMILPNet_dll/src/OcisMILPDll_export.cpp
+index 3c0d927..4f8d14f 100644
+--- a/OcisMILPNet_dll/src/OcisMILPDll_export.cpp
++++ b/OcisMILPNet_dll/src/OcisMILPDll_export.cpp
+@@ -756,7 +756,12 @@ void stepSolver_sim_Roe_only_pool(OcisMILPNetLab* obj, int k,int pool_id) {
+   int absolute_index = std::max(0, obj->time_nindex + local_k);
+   obj->k = local_k;
+ 
+-  obj->solver_sedi.stepSolver_Roe_pool(obj->solver_sedi.solver_type, obj->solver_sedi.epoch,pool_id);
++  try {
++    obj->solver_sedi.stepSolver_Roe_pool(obj->solver_sedi.solver_type, obj->solver_sedi.epoch,pool_id);
++  } catch (const std::exception& e) {
++    obj->solver_sedi.tailwater_error=e.what();
++    obj->solver_sedi.nanLabel=1;obj->solver_sedi.guassParam.nanLabel=1;
++  }
+ 
+   // 保持对 Python 的局部步语义：返回的 k 仍然是 episode 内的步数。
+   k = local_k;
+@@ -1114,6 +1119,18 @@ char* get_stepdata_sim(OcisMILPNetLab* obj, const char* datatype) {
+     }
+ 
+   }
++  else if (datatype_str == "gates_Q_current") {
++    for (int i=0; i<obj->solver_sedi.guassParam.gatesCount; ++i) {
++      const auto& g=obj->solver_sedi.guassParam.gates[i];
++      int node=g.nIndexDown;
++      if (node<0 || node>=obj->solver_sedi.guassParam.wNodeCount)
++        node=obj->solver_sedi.guassParam.wNode[g.nIndex].neighborNodes[1];
++      if (node<0 || node>=obj->solver_sedi.guassParam.wNodeCount) node=g.nIndex;
++      double q=obj->solver_sedi.guassParam.wNode[node].Q;
++      if (g.type==eInput) q=g.stage[0].dQ;
++      data_j[to_string(i)]=q;
++    }
++  }
+   else if (datatype_str == "gates_Q") {
+     //  array
+     for (int i = 0; i < obj->solver_sedi.guassParam.gatesCount; i++) {
+@@ -1232,6 +1249,21 @@ char* get_stepdata_sim(OcisMILPNetLab* obj, const char* datatype) {
+ 
+   }
+ 
++  else if (datatype_str == "node_section_id" || datatype_str == "node_A"
++      || datatype_str == "node_B" || datatype_str == "node_P" || datatype_str == "node_HR"
++      || datatype_str == "node_pressure_integral") {
++    std::vector<double> values;
++    for (int i=0; i<obj->solver_sedi.guassParam.wNodeCount; ++i) {
++      const auto& n=obj->solver_sedi.guassParam.wNode[i];
++      if (datatype_str=="node_section_id") values.push_back(n.section_lookup_id);
++      else if (datatype_str=="node_A") values.push_back(n.A);
++      else if (datatype_str=="node_B") values.push_back(n.B);
++      else if (datatype_str=="node_P") values.push_back(n.P);
++      else if (datatype_str=="node_HR") values.push_back(n.HR);
++      else values.push_back(SectionAtDepth(n,n.h).pressure_integral);
++    }
++    data_j=values;
++  }
+   else if (datatype_str == "node_Width") {
+     //  array
+     std::vector<double > nindex_data_vec;
+@@ -1333,6 +1365,11 @@ char* get_gate_info_sim(OcisMILPNetLab* obj) {
+ 
+       data_j[to_string(i)]["name"] = gname;
+       data_j[to_string(i)]["nIndex"] = g->nIndex;
++      data_j[to_string(i)]["nIndexUp"] = g->nIndexUp;
++      data_j[to_string(i)]["nIndexDown"] = g->nIndexDown;
++      data_j[to_string(i)]["Bwid_m"] = g->Bwid;
++      data_j[to_string(i)]["Eopen_num"] = g->Eopen_num;
++      data_j[to_string(i)]["mu"] = {{"Uef",g->Uef},{"Ues",g->Ues},{"Ucf",g->Ucf},{"Ucs",g->Ucs}};
+       data_j[to_string(i)]["type"] = g->type;
+ 
+     }
+@@ -1349,6 +1386,16 @@ char* get_gate_info_sim(OcisMILPNetLab* obj) {
+ 
+ 
+ 
++int set_GatesDownstreamStage_sim(OcisMILPNetLab* obj, const char* config) {
++  if (!obj||!config) return 0;
++  try {obj->solver_sedi.configure_tailwater(json::parse(config));return 1;}
++  catch (const std::exception& e) {obj->solver_sedi.tailwater_error=e.what();return 0;}
++}
++const char* get_downstream_stage_report_sim(OcisMILPNetLab* obj) {
++  static thread_local std::string result;
++  result=obj?obj->solver_sedi.tailwater_report().dump():"{\"error\":\"null solver\"}";
++  return result.c_str();
++}
+ void set_GatesBC_sim(OcisMILPNetLab* obj, const char* GatesBC_obj) {
+   /// <summary>
+   /// 接收一个json序列的闸门交互信息对象，包含如下内容：
+@@ -1778,6 +1825,8 @@ void save_states(OcisMILPNetLab* obj, const char* filename) {
+   obj->save_sts.assign(solver.guassParam.wNode,
+       solver.guassParam.wNode + solver.guassParam.wNodeCount);
+   saved.solver_k = solver.canal_param.k;
++  saved.downstream_stage=solver.canal_param.boundary_stage2;
++  saved.tailwater_error=solver.tailwater_error;
+   saved.wrapper_k = obj->k;
+   saved.epoch = solver.epoch;
+   saved.k_outfile = solver.k_outfile;
+@@ -1806,9 +1855,21 @@ void save_states(OcisMILPNetLab* obj, const char* filename) {
+   saved.sim_canal_c = solver.sim_canal_c;
+   saved.id_gates_e_map = solver.id_gates_e_map;
+   saved.result_pt = solver.result_pt;
++  if (filename && *filename)
++    obj->named_snapshots[filename] = {obj->save_sts, saved};
+ }
+ 
+ void set_states(OcisMILPNetLab* obj, const char* filename) {
++  if (obj && filename && *filename) {
++    auto found=obj->named_snapshots.find(filename);
++    if (found==obj->named_snapshots.end()) {
++      obj->solver_sedi.tailwater_error="named snapshot not found";
++      obj->solver_sedi.nanLabel=1;
++      return;
++    }
++    obj->save_sts=found->second.nodes;
++    obj->cycle_checkpoint=found->second.cycle;
++  }
+   if (!obj || obj->save_sts.empty()) return;
+   auto& solver = obj->solver_sedi;
+   const auto& saved = obj->cycle_checkpoint;
+@@ -1820,6 +1881,8 @@ void set_states(OcisMILPNetLab* obj, const char* filename) {
+   std::copy(obj->save_sts.begin(), obj->save_sts.end(), solver.guassParam.wNode);
+   std::copy(saved.gates.begin(), saved.gates.end(), solver.gates);
+   solver.canal_param.k = saved.solver_k;
++  solver.canal_param.boundary_stage2=saved.downstream_stage;
++  solver.tailwater_error=saved.tailwater_error;
+   obj->k = saved.wrapper_k;
+   solver.epoch = saved.epoch;
+   solver.k_outfile = saved.k_outfile;
+@@ -1847,6 +1910,23 @@ void set_states(OcisMILPNetLab* obj, const char* filename) {
+   solver.result_pt = saved.result_pt;
+ }
+ 
++int compare_snapshot_sim(OcisMILPNetLab* obj, const char* name) {
++  if (!obj || !name) return 0;
++  auto found=obj->named_snapshots.find(name);
++  if (found==obj->named_snapshots.end()) return 0;
++  const auto& snapshot=found->second;
++  const auto& solver=obj->solver_sedi;
++  if (snapshot.nodes.size()!=static_cast<size_t>(solver.guassParam.wNodeCount)
++      ||snapshot.cycle.gates.size()!=static_cast<size_t>(solver.gatesNum)) return 0;
++  return std::memcmp(snapshot.nodes.data(),solver.guassParam.wNode,snapshot.nodes.size()*sizeof(stWaterNode))==0
++      &&std::memcmp(snapshot.cycle.gates.data(),solver.gates,snapshot.cycle.gates.size()*sizeof(stGate))==0
++      &&snapshot.cycle.solver_k==solver.canal_param.k&&snapshot.cycle.wrapper_k==obj->k
++      &&snapshot.cycle.epoch==solver.epoch&&snapshot.cycle.k_outfile==solver.k_outfile
++      &&snapshot.cycle.nanLabel==solver.nanLabel&&snapshot.cycle.guass_nanLabel==solver.guassParam.nanLabel
++      &&snapshot.cycle.downstream_stage==solver.canal_param.boundary_stage2
++      &&snapshot.cycle.id_gates_e_map==solver.id_gates_e_map;
++}
++
+ 
+ 
+ 
+@@ -3365,11 +3445,29 @@ void set_all_gates_byType(OcisMILPNetLab* obj, double value,int type) {
+ }
+ 
+ void set_CrossSection(OcisMILPNetLab* obj, const char* CrossSection_path,int cs_start,int cs_end) {
+-
+-  string path = CrossSection_path;
+-  obj->solver_sedi.get_canal_CrossSection_fromGeojson(path,obj->solver_sedi.cs_obj,cs_start,cs_end);
+-
+-  obj->solver_sedi.WriteMesh(path+"\ReWriteMesh/");
++  if (!obj) return;
++  obj->solver_sedi.cross_section_import_report = nlohmann::json();
++  try {
++    string path = CrossSection_path;
++    obj->solver_sedi.get_canal_CrossSection_fromGeojson(path,obj->solver_sedi.cs_obj,cs_start,cs_end);
++    obj->solver_sedi.WriteMesh(path+"/ReWriteMesh/");
++  } catch (const std::exception& e) {
++    obj->solver_sedi.cross_section_import_report = {{"success", false}, {"error", e.what()}};
++  }
++}
++char* get_cross_section_report(OcisMILPNetLab* obj) {
++  auto report = obj->solver_sedi.cross_section_import_report;
++  if (report.is_object() && report.value("success", false)) {
++    int overflow=0;
++    for (int i=0; i<obj->solver_sedi.guassParam.wNodeCount; ++i) {
++      const auto& node=obj->solver_sedi.guassParam.wNode[i];
++      if (node.section_lookup && node.h>node.section_lookup->rows.back().h) ++overflow;
++    }
++    report["nodes_above_table_height"]=overflow;
++  }
++  const std::string text=report.dump();
++  char* result=new char[text.size()+1]; std::strcpy(result,text.c_str());
++  return result;
+ }
+ void set_initial_condition(OcisMILPNetLab* obj) {
+   obj->solver_sedi.set_initial_condition(obj->solver_sedi.pool_edges);
+diff --git a/OcisMILPNet_dll/src/OcisMILPDll_export.h b/OcisMILPNet_dll/src/OcisMILPDll_export.h
+index f06f196..39b940b 100644
+--- a/OcisMILPNet_dll/src/OcisMILPDll_export.h
++++ b/OcisMILPNet_dll/src/OcisMILPDll_export.h
+@@ -47,6 +47,8 @@ public:
+   std::vector<stWaterNode> save_sts;
+   // In-memory checkpoint for trial controls within one interaction cycle.
+   struct CycleCheckpoint {
++    decltype(waterSediment::canal_param.boundary_stage2) downstream_stage;
++    std::string tailwater_error;
+     int solver_k = 0, wrapper_k = 0, epoch = 0, k_outfile = 0, nanLabel = 0, guass_nanLabel = 0;
+     std::vector<stGate> gates;
+     decltype(waterSediment::pool_edges.pools) pools;
+@@ -70,6 +72,12 @@ public:
+     decltype(waterSediment::id_gates_e_map) id_gates_e_map;
+     decltype(waterSediment::result_pt) result_pt;
+   } cycle_checkpoint;
++  struct NamedSnapshot {
++    std::vector<stWaterNode> nodes;
++    CycleCheckpoint cycle;
++  };
++  // Object-owned snapshots: section lookup pointers remain owned by this solver.
++  std::map<std::string, NamedSnapshot> named_snapshots;
+ 
+   std::vector<process_int_T> sim_solver_Q;
+   std::vector<process_int_T> sim_solver_wh;
+@@ -534,6 +542,8 @@ extern "C" {
+ 
+     // hydraudynamic - set
+     OCISMILPNETDLL_API void set_GatesBC_sim(OcisMILPNetLab* obj, const char* GatesBC_obj);
++    OCISMILPNETDLL_API int set_GatesDownstreamStage_sim(OcisMILPNetLab* obj, const char* config);
++    OCISMILPNETDLL_API const char* get_downstream_stage_report_sim(OcisMILPNetLab* obj);
+     OCISMILPNETDLL_API void set_GatesFlow_bynIndex_sim(OcisMILPNetLab* obj,int nIndex,double flow);
+     OCISMILPNETDLL_API void set_GatesFlow_byID_sim(OcisMILPNetLab* obj,int id,double flow);
+     OCISMILPNETDLL_API void set_GatesFlow_calculationType_byID_sim(OcisMILPNetLab* obj,int id,int type);
+@@ -559,6 +569,7 @@ extern "C" {
+     OCISMILPNETDLL_API void set_all_inih(OcisMILPNetLab* obj, double value);
+     OCISMILPNETDLL_API void set_all_manning(OcisMILPNetLab* obj, double value);
+     OCISMILPNETDLL_API void set_all_zb(OcisMILPNetLab* obj, double value);
++    OCISMILPNETDLL_API char* get_cross_section_report(OcisMILPNetLab* obj);
+     OCISMILPNETDLL_API void set_all_gates_byType(OcisMILPNetLab* obj, double value,int type);
+     OCISMILPNETDLL_API void set_CrossSection(OcisMILPNetLab* obj, const char* CrossSection_path,int cs_start,int cs_end);  // ���������
+     OCISMILPNETDLL_API void set_initial_condition(OcisMILPNetLab* obj);  // ����edges.csv���ó�ʼ����
+@@ -566,6 +577,7 @@ extern "C" {
+ 
+     // hydraudynamic - reset state
+     OCISMILPNETDLL_API void save_states(OcisMILPNetLab* obj, const char* filename);
++    OCISMILPNETDLL_API int compare_snapshot_sim(OcisMILPNetLab* obj, const char* name);
+     OCISMILPNETDLL_API void set_states(OcisMILPNetLab* obj, const char* filename);
+ 
+     OCISMILPNETDLL_API void reset_states(OcisMILPNetLab* obj );
+diff --git a/README.md b/README.md
+index 5378cc6..32459b3 100644
+--- a/README.md
++++ b/README.md
+@@ -680,7 +680,7 @@ Eopen = 0.35                      //初始闸门开度(如果为多孔闸门，
+ | maxFlow               | 流量上限               |
+ | minFlow               | 流量下限               |
+ | Flow_ic               | 初始流量               |
+-| seepageC              | 渠道水利用系数         |
++| utilization_ratio     | 渠段输水利用率（无量纲，默认 `0.995`） |
+ | forceFlow             | 强制约束为给定流量过程 |
+ | forceStage            | 强制约束为给定水位过程 |
+ | upstream_elevation    | 节点前底部高程         |
+@@ -691,6 +691,9 @@ Eopen = 0.35                      //初始闸门开度(如果为多孔闸门，
+ | level1                | 管理站                 |
+ 
+ 
++`utilization_ratio` 只应配置在定义渠段的 `indirect` 行，推荐范围为 `(0, 1]`。它表示到达下游的有效比例，而不是渗漏比例：`1.0` 表示无输水损失，`0.995` 表示约 `0.5%` 损失，`0.95` 表示约 `5%` 损失。当前读取器只识别精确字段名 `utilization_ratio`；旧字段名 `seepageC` 不会被读取，效果等同于未配置并使用默认值 `0.995`。readable-LBBD 中渠段损失按 `(1-utilization_ratio) × 延迟后的原始到达流量` 计算，且该效率同时进入主问题和水力子问题的水量平衡。
++
++
+ 
+ 
+ 
+diff --git a/data/sj-huilin-2024/mesh/edges.csv b/data/sj-huilin-2024/mesh/edges.csv
+index 8af79ab..ea7dd6a 100644
+--- a/data/sj-huilin-2024/mesh/edges.csv
++++ b/data/sj-huilin-2024/mesh/edges.csv
+@@ -1,12 +1,12 @@
+-source,target,end,ConnectionType,stake,canal,id,delaytime,pool_Width,pool_Length,pool_m,pool_hTarget,pool_h_ic,max_h,min_h,type,maxFlow,minFlow,Flow_ic,seepageC,pool_manning,pool_slope
+-������,����ׯ����բ,,indirect,0,������,1,39,14.5,7019,2.5,2,2,5,5,0,50,0,0,1,0.025,0.0004
+-����ׯ����բ,�������բ,,indirect,7019,������,2,39,14.5,6446,2.5,2,2,5,5,4,50,0,0,1,0.025,0.0004
+-�������բ,��ׯ����բ,,indirect,17294,������,3,39,5.5,6528,2.5,2,2,5,5,4,40,0,0,1,0.025,0.0004
+-��ׯ����բ,�³ǽ���բ,,indirect,23822,������,4,39,5.5,4186,2.5,2,2,5,5,4,18,0,0,1,0.025,0.0004
+-�³ǽ���բ,-1,,indirect,28008,������,5,39,5.5,500,2.5,2,2,5,5,4,18,0,0,1,0.025,0.0004
+-����ָ���,��֧բ��,,indirect,0,����ָ�,6,39,3.5,6621,2.5,2,2,5,5,4,18,0,0,1,0.025,0.0004
+-��֧բ��,��֧բ��,,indirect,6621,����ָ�,7,39,3.5,6316,2.5,2,2,5,5,4,10,0,0,1,0.025,0.0004
+-��֧բ��,-1,,indirect,12937,����ָ�,8,39,2.5,500,2.5,2,2,5,5,4,8,0,0,1,0.025,0.0004
++source,target,end,ConnectionType,stake,canal,id,delaytime,pool_Width,pool_Length,pool_m,pool_hTarget,pool_h_ic,max_h,min_h,type,maxFlow,minFlow,Flow_ic,utilization_ratio,pool_manning,pool_slope
++������,����ׯ����բ,,indirect,0,������,1,39,14.5,7019,2.5,2,2,5,5,0,50,0,0,0.95,0.025,0.0004
++����ׯ����բ,�������բ,,indirect,7019,������,2,39,14.5,6446,2.5,2,2,5,5,4,50,0,0,0.95,0.025,0.0004
++�������բ,��ׯ����բ,,indirect,17294,������,3,39,5.5,6528,2.5,2,2,5,5,4,40,0,0,0.95,0.025,0.0004
++��ׯ����բ,�³ǽ���բ,,indirect,23822,������,4,39,5.5,4186,2.5,2,2,5,5,4,18,0,0,0.95,0.025,0.0004
++�³ǽ���բ,-1,,indirect,28008,������,5,39,5.5,500,2.5,2,2,5,5,4,18,0,0,0.95,0.025,0.0004
++����ָ���,��֧բ��,,indirect,0,����ָ�,6,39,3.5,6621,2.5,2,2,5,5,4,18,0,0,0.95,0.025,0.0004
++��֧բ��,��֧բ��,,indirect,6621,����ָ�,7,39,3.5,6316,2.5,2,2,5,5,4,10,0,0,0.95,0.025,0.0004
++��֧բ��,-1,,indirect,12937,����ָ�,8,39,2.5,500,2.5,2,2,5,5,4,8,0,0,0.95,0.025,0.0004
+ ������,����ׯ�ָ���,����ׯ����բ,direct,7013,������,9,,,,,,2,1,1,2,4.93,0,0,,,
+ ����ׯ����բ,���山,�������բ,direct,11000,������,10,,,,,,2,1,1,2,4.98,0,0,,,
+ ����ׯ����բ,�ſƷָ���,�������բ,direct,13457,������,11,,,,,,2,1,1,2,3.5,0,0,,,
+diff --git a/docs/lbbd-adjustable-parameters.md b/docs/lbbd-adjustable-parameters.md
+index e197f69..1442aba 100644
+--- a/docs/lbbd-adjustable-parameters.md
++++ b/docs/lbbd-adjustable-parameters.md
+@@ -277,12 +277,39 @@ Fast Master 默认关闭。它是启发式候选生成器，不为 Exact LBBD 
+ | 文件/字段 | 作用 |
+ |---|---|
+ | `OCIS_dataConfig.json.HDCM.boundary_flow_path` | series 需求过程及观测边界流量来源。 |
+-| `OCIS_dataConfig.json.HDCM.edges_path` | 拓扑及物理能力文件。 |
++| `OCIS_dataConfig.json.<selected_model>.mesh_path` + `edges.csv` | 当前 MILP 加载器实际使用的拓扑及物理能力文件；现有 `edges_path` 随后会被该路径覆盖。 |
+ | `edges.csv.maxFlow` | 闸门/渠段硬流量能力，决定持续时间和最大可配水量。 |
++| `edges.csv.utilization_ratio` | `indirect` 渠段的输水利用率，默认 `0.995`，推荐范围 `(0,1]`；越小表示渗漏越大。 |
+ | `edges.csv` 拓扑关系 | 决定需求所属渠段、上下游共享能力、传播时延和空间优先级。 |
+ | `input/object_priority_overrides.json` | 覆盖每个对象的 `irr_progress` 与 `grain_to_cash_crop_ratio`。 |
+ | `waterDemand` 或边界需求 CSV | 决定需求对象、需求过程、允许配水时窗及积分水量。 |
+ 
++### `edges.csv.utilization_ratio`：输水利用率与渗漏
++
++该字段是无量纲的渠段输水利用率，不是渗漏率：
++
++```text
++有效到达水量 = utilization_ratio × 延迟后的上游原始到达水量
++渠段损失水量 = (1 - utilization_ratio) × 延迟后的上游原始到达水量
++```
++
++| 配置值 | 单段含义 |
++|---:|---|
++| `1.0` | 无输水损失。 |
++| `0.995` | 默认值，约 `0.5%` 损失。 |
++| `0.95` | 约 `5%` 损失。 |
++
++使用规则和边界：
++
++- 字段名必须精确写为 `utilization_ratio`。当前读取器不识别旧名称 `seepageC`，因此只保留 `seepageC` 时会继续使用默认值 `0.995`，并不代表零渗漏。
++- 该参数配置在 `ConnectionType=indirect` 的渠段定义行。`direct` 行描述渠段内闸门，不应用它覆盖渠段效率。
++- readable-LBBD 只接受 `0 < utilization_ratio <= 1`；超出该范围时其渠段效率回退为 `0.995`。为避免不同求解入口产生不一致行为，输入文件也应严格保持在 `(0,1]`。
++- 多级渠段的效率沿路径相乘。忽略库容变化、侧向入流、退水和时滞边界效应时，经过 `n` 个利用率均为 `eta` 的渠段，末端有效比例约为 `eta^n`。
++- Exact Master、连续 value SP、完整 shaped SP 及其水力平衡使用同一渠段效率。降低利用率通常会提高渠首和中间节制闸的累计过水量；末端需求闸的累计配水量仍由需求上限决定，不要求同步增加。
++- `Q.csv` 中的 `leakage*` 为显式损失输出。若同一渠段配置多个 `type=6` 损失口，该渠段损失在这些损失口之间平均分配，其合计才是该渠段总损失。
++
++验证渗漏参数时，应保持可执行文件、`input.json`、需求文件和其他 `edges.csv` 字段不变，至少对比两个利用率工况。累计量按 `sum(Q[t] × MILP_dt)` 计算，并同时核对渠首、各中间节制闸、末端需求闸、全部 `leakage*` 合计、需求满足率、自动放松和最优性状态。由于未证明最优时具体时序和峰值可能变化，应优先用累计过水量判断渗漏补偿是否生效。
++
+ ## 14. 当前 dayudu 本地试验配置
+ 
+ 当前工作区的 dayudu `CalculationParams` 显式配置为：
+@@ -311,13 +338,14 @@ Fast Master 默认关闭。它是启发式候选生成器，不为 Exact LBBD 
+ 
+ 修改参数后，建议按以下顺序判断是否真正生效：
+ 
+-1. `[LBBD][ConstraintConfig]`：确认全局参数实际读取值。
+-2. `[LBBD][GateFlowConstraint]`：确认每个闸门的变化次数、变幅和时长参数。
+-3. `[LBBD][GapRepairWindow]` / `[LBBD][GapRepair]`：确认缺口修复窗口、`k` 和新增 ON 步。
+-4. `[LBBD][ConstraintAudit]`：确认最终违反量及是否满足。
+-5. `[LBBD][Relaxation]`：确认是否发生自动放松；“有结果”不等于原始约束全部生效。
+-6. `[LBBD][AllocationSummary]`：核对聚合需求、实际配水、满足率和缺口。
+-7. `[LBBD][Performance]` 与 `optimality_proven`：区分可行 incumbent 与已证明最优解。
++1. 先核对实际加载的 DataConfig、案例目录和 `mesh/edges.csv`；拓扑 CSV 还要确认字符编码与精确表头。
++2. `[LBBD][ConstraintConfig]`：确认全局参数实际读取值。
++3. `[LBBD][GateFlowConstraint]`：确认每个闸门的变化次数、变幅和时长参数。
++4. `[LBBD][GapRepairWindow]` / `[LBBD][GapRepair]`：确认缺口修复窗口、`k` 和新增 ON 步。
++5. `[LBBD][ConstraintAudit]`：确认最终违反量及是否满足。
++6. `[LBBD][Relaxation]`：确认是否发生自动放松；“有结果”不等于原始约束全部生效。
++7. `[LBBD][AllocationSummary]`：核对聚合需求、实际配水、满足率和缺口。
++8. `[LBBD][Performance]` 与 `optimality_proven`：区分可行 incumbent 与已证明最优解。
+ 
+ ## 16. 推荐的普通复盘场景骨架
+ 
+diff --git a/skills/ocis-lbbd-model/SKILL.md b/skills/ocis-lbbd-model/SKILL.md
+index 2caf224..25cc64f 100644
+--- a/skills/ocis-lbbd-model/SKILL.md
++++ b/skills/ocis-lbbd-model/SKILL.md
+@@ -16,6 +16,7 @@ Read [references/model-and-constraints.md](references/model-and-constraints.md)
+ - Treat explicit `flow/end_flow`, `W_task_gap`, and configured gate-change rules as auditable constraints. Any automatic relaxation must be printed, persisted, and reported as a relaxation—not as satisfaction of the original input.
+ - Resolve statically identifiable semantic conflicts before constructing the Exact Master. Within one effective constraint set, retain the same SCIP model across Service, Duration, and Benders-cut iterations.
+ - `d*` columns are aggregated flows for other water-distribution boundaries. Do not use them to judge a named gate's own constraint unless the task specifically concerns aggregation.
++- Use `edges.csv.utilization_ratio` as the per-reach conveyance efficiency in both Master and SP balances. It is not a leakage fraction; lower values mean larger losses. The legacy header `seepageC` is not read by the current topology loader.
+ - Post-solve weighted close and the one-shot time-limit retry are specified in `skills/ocis-lbbd-postprocess/SKILL.md`. A shaped-subproblem failure keeps the previous incumbent.
+ 
+ ## Validation workflow
+diff --git a/skills/ocis-lbbd-model/references/model-and-constraints.md b/skills/ocis-lbbd-model/references/model-and-constraints.md
+index 2ae6e05..a777f91 100644
+--- a/skills/ocis-lbbd-model/references/model-and-constraints.md
++++ b/skills/ocis-lbbd-model/references/model-and-constraints.md
+@@ -39,6 +39,16 @@ The normal shaped SP is lexicographic. Phase 1 maximizes the same priority-weigh
+ 
+ When gate change-count limits are active, the shaped SP adds direction binaries. A value-only SP deliberately omits them, so it is not a valid final incumbent. Run a complete SP before retaining a precheck solution.
+ 
++## Conveyance efficiency and leakage
++
++For reach `r`, `eta[r] = edges.csv.utilization_ratio` when `0 < eta <= 1`; otherwise readable-LBBD retains its default `0.995`. The topology reader recognizes the exact header `utilization_ratio`; `seepageC` is not an alias. Configure this value on `indirect` reach rows.
++
++Both the Master and hydraulic SP apply efficiency to delayed incoming volume. The SP balance is structurally:
++
++`V[r,t+1] = V[r,t] + eta[r] * delayed_inflow[r,t] - turnout_delivery[r,t] - child_reach_inflow[r,t] - outlet[r,t] - spill[r,t] + side_inflow[r,t]`.
++
++Thus the physical reach loss is `(1-eta[r]) * raw_delayed_arrival`. Type-6 `leakage*` output gates expose that loss; multiple such gates on one reach split it evenly. Path efficiencies multiply, so a downstream demand can require progressively more upstream withdrawal. With demand held fixed, lowering `eta` should increase cumulative headworks/intermediate-reach flow until a source or reach capacity binds; terminal demand volume itself remains capped by demand. Compare `sum_t Q[t] dt[t]` rather than assuming every time-step value or the MIP-selected peak must increase.
++
+ ## Master-SP interaction
+ 
+ 1. Solve the service Master.
+diff --git a/skills/ocis-lbbd-param-validation/SKILL.md b/skills/ocis-lbbd-param-validation/SKILL.md
+index fc9eaa2..dbd4eae 100644
+--- a/skills/ocis-lbbd-param-validation/SKILL.md
++++ b/skills/ocis-lbbd-param-validation/SKILL.md
+@@ -1,6 +1,6 @@
+ ---
+ name: ocis-lbbd-param-validation
+-description: Validate OCIS readable-LBBD water-allocation configuration and parameters by resolving OCIS_dataConfig.json routing, running isolated test.cpp/bin experiments, sweeping input.json settings, and interpreting constraint, completion, and postprocess logs. Use for OCIS/LBBD case selection, path-resolution, parameter effectiveness, time limits, max_flow_steps, completion versus hydraulic feasibility, conflict, or regression checks.
++description: Validate OCIS readable-LBBD water-allocation configuration and parameters by resolving OCIS_dataConfig.json routing, checking edges.csv topology and conveyance efficiency, running isolated test.cpp/bin experiments, and interpreting constraint, completion, leakage, and postprocess results. Use for case selection, path resolution, input.json or utilization_ratio effectiveness, time limits, completion versus hydraulic feasibility, conflicts, or regressions.
+ ---
+ 
+ # OCIS LBBD Parameter Validation
+@@ -9,6 +9,8 @@ Use this skill when the user asks how an OCIS case is selected or whether readab
+ 
+ For case-directory structure, field semantics, path concatenation, and entrypoint caveats, read [references/ocis-data-config.md](references/ocis-data-config.md) whenever the task involves `OCIS_dataConfig.json`, selecting a case, missing files, or running the binary from a different directory.
+ 
++Read [references/edges-csv.md](references/edges-csv.md) whenever the task involves topology, `maxFlow`, `utilization_ratio`, `seepageC`, leakage output, headworks/control-gate flow changes, or whether seepage is active.
++
+ ## Core workflow
+ 
+ 1. Confirm the compiled test entrypoint before running anything:
+@@ -29,6 +31,7 @@ For case-directory structure, field semantics, path concatenation, and entrypoin
+    - For each variant, restore the baseline first, then apply only the intended changes.
+    - Save each variant's `input.json`, `run.log`, output CSV/JSON files, and any `LBBD_constraint_relaxation.log`.
+    - Avoid brittle JSON text edits that can corrupt commented JSON. Prefer narrow line edits when comments are present, or validate the resulting file by running the program and checking early parse failures.
++   - Treat legacy-encoded CSV files as byte-sensitive. Detect/decode GB18030 or GBK explicitly and preserve the original encoding and line endings when changing only a header or numeric field.
+ 
+ 4. Use representative variants rather than a single run:
+    - Baseline.
+@@ -36,6 +39,7 @@ For case-directory structure, field semantics, path concatenation, and entrypoin
+    - Tighten duration caps using `obs.<gate>.max_delivery_duration_factor`, with `CalculationParams.max_delivery_duration_factor` as the relaxation target if that behavior is under test.
+    - Tighten flow-shape hard constraints, e.g. `max_flow_steps`, `min_action_changes`, `delta_Q_max_ratio`, `delta_Q_max`.
+    - Add/remove `flow` and `end_flow` for boundary-flow behavior when relevant.
++   - For conveyance-loss tests, change only `indirect` rows' `utilization_ratio`; keep the executable, `input.json`, demand series, topology, capacities, and all other fields identical.
+ 
+ ## What to inspect
+ 
+@@ -64,6 +68,7 @@ Prioritize LBBD's own validation and relaxation records over visual inspection o
+ - `CalculationParams.makespan_penalty` is the global makespan preference. `obs.<gate>.makespan_penalty` is a per-gate soft preference on that gate's own end time; it cannot override hard boundary, hydraulic, duration, or flow-change constraints.
+ - `obs.<gate>.max_delivery_duration_factor` is the normal per-gate hard duration cap. `CalculationParams.max_delivery_duration_factor` is a global relaxation target: if strict per-gate caps fail and the global value is larger, the solver may relax those gates up to the global factor and retry.
+ - Explicit `flow`/`q` and explicit `end_flow` are independent hard first/last-grid boundary conditions. Either may be configured alone; explicit zero also counts. These can conflict with tight `max_flow_steps` or tight `delta_Q_max_ratio`.
++- `edges.csv.utilization_ratio` is conveyance efficiency, not leakage fraction. The exact header is required; `seepageC` is ignored by the current reader. Missing or ignored input therefore uses `0.995`, not `1.0`. Lowering the value increases loss. Judge the response primarily by integrated reach/headworks volume and summed `leakage*`, not by one timestamp or peak alone.
+ - `max_flow_steps` counts adjacent `|dQ|` changes. Opening and closing both count. A configured positive value below 2 is raised to 2 at read time; confirm `[obs] <gate> max_flow_steps raised from 1 to minimum 2` or the matching `turnout_max_flow_steps` line, then confirm `GateFlowConstraint` uses 2. Negative values stay disabled. Do not interpret the cap as `2N`.
+ - `delta_Q_max_ratio` caps each adjacent change at `maxFlow * ratio`, truncated to `[0,1]`. With a positive `delta_Q_max`, the allowed change is the minimum of the two caps.
+ - `master_time_limit` and `duration_master_time_limit` are per-solve search budgets. Non-positive means unlimited. A finite budget that returns a detailed schedule with `completion_target_satisfied=0` is a time-limited partial allocation, not proof that the original completion targets are infeasible. Automatic time-limit retry is disabled, so the postprocess must not raise either configured limit.
+diff --git a/skills/ocis-lbbd-param-validation/references/edges-csv.md b/skills/ocis-lbbd-param-validation/references/edges-csv.md
+new file mode 100644
+index 0000000..6b1d28d
+--- /dev/null
++++ b/skills/ocis-lbbd-param-validation/references/edges-csv.md
+@@ -0,0 +1,48 @@
++# `edges.csv` topology and conveyance-loss validation
++
++Read this reference when validating topology capacity, conveyance efficiency, or leakage behavior in readable-LBBD.
++
++## Effective field
++
++`utilization_ratio` is the dimensionless fraction of delayed upstream flow that reaches the pool balance:
++
++```text
++effective arrival = utilization_ratio * raw delayed arrival
++reach loss        = (1 - utilization_ratio) * raw delayed arrival
++```
++
++- Configure it on `ConnectionType=indirect` rows, which define reaches/pools.
++- Use `(0,1]`: `1` means no loss, `0.995` means about 0.5% loss, and `0.95` means about 5% loss.
++- The C++ pool default and readable-LBBD reach default are both `0.995`.
++- The reader requires the exact header `utilization_ratio`. `seepageC` is not an alias and is ignored, so a file containing only `seepageC` behaves like an omitted field and retains `0.995`.
++- readable-LBBD accepts a loaded value only when `0 < value <= 1`; otherwise it uses `0.995`. Do not rely on that fallback because other solver paths may consume the pool value differently.
++
++The same reach efficiency is present in Exact Master balances, value/shaped hydraulic SP balances, path-capacity calculations, initial in-transit water, and validation. A loss test is therefore a model-input validation, not merely an output-format check.
++
++## Expected response
++
++With demand, capacities, initial state, and all other settings held fixed, lowering `utilization_ratio` normally causes:
++
++- larger integrated source/headworks flow;
++- larger integrated intermediate control-gate flow, with a stronger effect farther upstream or across more lossy reaches;
++- unchanged integrated terminal demand-gate delivery when the same demand remains fully satisfied;
++- larger sum of explicit `leakage*` outputs.
++
++Do not require every timestamp or peak to increase. A time-limited MIP may select a different feasible schedule, so peak and timing changes mix physical loss compensation with scheduling choices. Integrated volumes are the primary causal comparison. Capacity binding may instead reduce demand satisfaction.
++
++## Isolated A/B procedure
++
++1. Resolve the effective file through `OCIS_dataConfig.json`, `selected_model`, `dirpath`, `case_name`, and `mesh_path`. Do not assume `edges_path` is effective in the current MILP loader.
++2. Confirm the compiled test macro, case path, `stepSolver_MILP(...)` episode, executable hash, and process working directory.
++3. Copy the executable and one case into a new `.codex_validation/` directory. Run from the directory that makes the compiled relative DataConfig path valid.
++4. Preserve the CSV encoding. These case files may be GBK/GB18030; terminal mojibake is not evidence of corruption. Decode explicitly, edit only the exact header/value cells, re-encode, and verify node names and row count.
++5. Use one baseline and one changed efficiency. Do not change `input.json`, boundary demand, capacity, or topology in the same comparison.
++6. Require a usable detailed incumbent. Record exit code, wall time, `[LBBD][AllocationSummary]`, `[LBBD][Validation]`, automatic relaxations, and `optimality_proven`.
++7. From `output/Q.csv`, integrate with the modeled period length: `volume = sum_t Q[t] * period_seconds[t]`. Compare named headworks/control gates, terminal demand gates, and the sum of all `leakage*` columns. Do not use `d*` aggregate columns as substitutes for named gates.
++
++## Interpretation traps
++
++- Renaming `seepageC` to `utilization_ratio` while retaining value `1` changes the model from the implicit default `0.995` to zero loss. That is not a header-only equivalence test.
++- To prove a readable header is equivalent to the old implicit default, set every relevant `indirect` value explicitly to `0.995`; identical `Q.csv` numeric contents then establish equivalence for that run.
++- A 100% demand-satisfaction result does not mean losses are absent. Upstream withdrawal may have increased to preserve the same terminal delivery.
++- If the run did not prove optimality, report cumulative physical effects separately from peak/timing differences.
+diff --git a/skills/ocis-lbbd-param-validation/references/ocis-data-config.md b/skills/ocis-lbbd-param-validation/references/ocis-data-config.md
+index 453fa35..80f6b63 100644
+--- a/skills/ocis-lbbd-param-validation/references/ocis-data-config.md
++++ b/skills/ocis-lbbd-param-validation/references/ocis-data-config.md
+@@ -88,3 +88,5 @@ stepSolver_MILP episode
+ ```
+ 
+ Check that every required input exists before starting a long solve. Keep `OCIS_dataConfig.json` routing errors separate from `input.json` parameter or feasibility failures.
++
++After resolving the effective topology path, use [edges-csv.md](edges-csv.md) for `utilization_ratio`, legacy `seepageC`, CSV encoding, and leakage A/B validation rules.
+diff --git a/src/MTsveErosion.h b/src/MTsveErosion.h
+index 34adf1d..03df226 100644
+--- a/src/MTsveErosion.h
++++ b/src/MTsveErosion.h
+@@ -13,6 +13,7 @@
+ #include "FileInteraction.h"
+ #include "edges_utils.h"
+ #include "gates_hydraulic.h"
++#include "cross_section_lookup.h"
+ 
+ #pragma warning(disable: 4996)
+ #define LINESTYLE	20
+@@ -78,6 +79,9 @@ enum eAutoGateType
+ 
+ struct stWaterNode
+ {
++  // POD pointer: legacy mesh readers memset/copy these nodes. Owned by solver.
++  const CrossSectionLookup* section_lookup = nullptr;
++  int section_lookup_id = 0;
+   int nIndex;
+   char szStyle[LINESTYLE];
+   eLineType type;		///< Type
+@@ -165,6 +169,29 @@ struct stWaterNode
+   int nanLabel = 0;
+ };
+ 
++inline SectionHydraulics SectionAtDepth(const stWaterNode& node, double h) {
++  if (node.section_lookup) return node.section_lookup->at(h);
++  h = (std::max)(0.0, h);
++  return {node.Width*h+node.tanb*h*h, node.Width+2*node.tanb*h,
++          node.Width+2*h/node.cosb, node.Width*h*h/2+node.tanb*h*h*h/3};
++}
++inline void UpdateLookupSection(stWaterNode& node, double minimumDepth) {
++  const auto s = SectionAtDepth(node, (std::max)(node.h, minimumDepth));
++  node.AI = SectionAtDepth(node, minimumDepth).area;
++  node.A = (std::max)(s.area, node.AI); node.B = s.top_width;
++  node.P = s.perimeter; node.HR = node.A/(std::max)(node.P, 1e-12);
++}
++inline double SectionWaveSpeed(const stWaterNode& node) {
++  return std::sqrt(9.8*(std::max)(node.A, 1e-12)/(std::max)(node.B, 1e-12));
++}
++inline double SectionEffectiveWidth(const stWaterNode& node) {
++  return node.section_lookup ? (std::max)(node.B,1e-12) : node.Width;
++}
++inline double SectionStorageChange(const stWaterNode& node, double current, double old) {
++  return node.section_lookup ? SectionAtDepth(node,current).area-SectionAtDepth(node,old).area
++                             : node.B*(current-old);
++}
++
+ struct stAutoGate
+ {
+ 	int		areaId;
+@@ -220,6 +247,15 @@ struct stGate
+   double BC_UP_wh = 0;
+   double BC_DOWN_wh = 0;
+ 
++  double BC_sill_wh = 0;
++  int BC_max_gap_seconds = 21600;
++  bool BC_allow_reverse = true;
++  double BC_last_flux = 0;
++  double BC_last_capacity = 0;
++  double BC_out_volume = 0;
++  double BC_last_mass_residual = 0;
++  double BC_cumulative_mass_residual = 0;
++
+ 
+   double sim_Q = -1;
+   double sim_h1 = -1;
+diff --git a/src/cross_section_lookup.h b/src/cross_section_lookup.h
+new file mode 100644
+index 0000000..fc7b709
+--- /dev/null
++++ b/src/cross_section_lookup.h
+@@ -0,0 +1,68 @@
++#pragma once
++#include <algorithm>
++#include <cmath>
++#include <stdexcept>
++#include <vector>
++
++// Immutable open-channel geometry. A and I are integrals of interpolated T,
++// so the storage derivative used by Newton iteration is exactly dA/dh = T.
++struct SectionHydraulics {
++  double area = 0, top_width = 0, perimeter = 0, pressure_integral = 0;
++};
++
++class CrossSectionLookup {
++public:
++  struct Row { double h, area, width, perimeter, pressure; };
++  std::vector<Row> rows;
++  explicit CrossSectionLookup(std::vector<Row> input) : rows(std::move(input)) {
++    if (rows.size() < 2 || rows.front().h != 0 || rows.front().area != 0
++        || rows.front().pressure != 0) throw std::invalid_argument("invalid section table origin");
++    for (size_t i = 0; i < rows.size(); ++i) {
++      const auto& r = rows[i];
++      if (!std::isfinite(r.h) || !std::isfinite(r.area) || !std::isfinite(r.width)
++          || !std::isfinite(r.perimeter) || !std::isfinite(r.pressure)
++          || r.h < 0 || r.area < 0 || r.width < 0 || r.perimeter < 0 || r.pressure < 0)
++        throw std::invalid_argument("nonfinite or negative section table value");
++      if (!i) continue;
++      const auto& p = rows[i-1];
++      double d = r.h-p.h;
++      if (d <= 0 || r.area <= p.area || r.perimeter < p.perimeter || r.width <= 0)
++        throw std::invalid_argument("nonmonotone section table");
++      double area = p.area + (p.width+r.width)*d/2;
++      double pressure = p.pressure + p.area*d + p.width*d*d/2
++          + (r.width-p.width)*d*d/6;
++      if (std::abs(area-r.area) > 1e-8*(std::max)(1.0, area)
++          || std::abs(pressure-r.pressure) > 1e-8*(std::max)(1.0, pressure))
++        throw std::invalid_argument("section A/T/pressure are inconsistent");
++    }
++    if (rows.back().width <= 0) throw std::invalid_argument("closed/zero-width section unsupported");
++  }
++  SectionHydraulics at(double depth) const {
++    if (!std::isfinite(depth)) throw std::invalid_argument("nonfinite section depth");
++    double h = (std::max)(0.0, depth);
++    if (h >= rows.back().h) {
++      const auto& p = rows.back(); double d = h-p.h;
++      // Explicit vertical-wall extension above the surveyed/generated bank.
++      return {p.area+p.width*d, p.width, p.perimeter+2*d,
++              p.pressure+p.area*d+p.width*d*d/2};
++    }
++    auto upper = std::upper_bound(rows.begin(), rows.end(), h,
++        [](double v, const Row& r) { return v < r.h; });
++    const auto& p = *(upper-1); const auto& q = *upper;
++    double d = h-p.h, slope = (q.width-p.width)/(q.h-p.h);
++    return {p.area+p.width*d+slope*d*d/2, p.width+slope*d,
++            p.perimeter+(q.perimeter-p.perimeter)*d/(q.h-p.h),
++            p.pressure+p.area*d+p.width*d*d/2+slope*d*d*d/6};
++  }
++  double depth_at_area(double area) const {
++    if (!std::isfinite(area) || area < 0) throw std::invalid_argument("invalid section area");
++    if (area >= rows.back().area)
++      return rows.back().h+(area-rows.back().area)/rows.back().width;
++    auto upper = std::upper_bound(rows.begin(), rows.end(), area,
++        [](double v, const Row& r) { return v < r.area; });
++    double lo = (upper-1)->h, hi = upper->h;
++    for (int i=0; i<50; ++i) { double mid=(lo+hi)/2;
++      if (at(mid).area < area) lo=mid; else hi=mid; }
++    return (lo+hi)/2;
++  }
++};
+diff --git a/src/tailwater_boundary_impl.h b/src/tailwater_boundary_impl.h
+new file mode 100644
+index 0000000..0393189
+--- /dev/null
++++ b/src/tailwater_boundary_impl.h
+@@ -0,0 +1,168 @@
++#pragma once
++#include "tailwater_gate.h"
++
++double waterSediment::tailwater_stage(const stGate& gate, time_t time) const {
++  auto found=canal_param.boundary_stage2.find(std::string(gate.name));
++  if (found==canal_param.boundary_stage2.end()||found->second.empty())
++    throw std::runtime_error("tailwater stage schedule missing");
++  const auto& samples=found->second;
++  auto right=samples.lower_bound(time);
++  if (right!=samples.end()&&right->first==time) return right->second;
++  if (right==samples.end()||right==samples.begin())
++    throw std::runtime_error("tailwater time outside supplied schedule");
++  auto left=std::prev(right);
++  const double gap=difftime(right->first,left->first);
++  if (gap<=0||gap>gate.BC_max_gap_seconds)
++    throw std::runtime_error("tailwater observation gap exceeds configured limit");
++  return left->second+(right->second-left->second)*difftime(time,left->first)/gap;
++}
++
++void waterSediment::configure_tailwater(const nlohmann::json& config) {
++  if (solver_type!="sediment") throw std::runtime_error("tailwater pool boundary currently requires sediment solver");
++  int id=config.at("gate_id").get<int>();
++  if (!gates||id<0||id>=gatesNum) throw std::invalid_argument("invalid tailwater gate_id");
++  stGate candidate=gates[id];
++  if (!config.value("enabled",true)) {gates[id].BC_STAGE_DOWN_LABEL=0;return;}
++  if (candidate.calculation_type!=1||candidate.nIndexUp<0||candidate.nIndexDown<0
++      ||candidate.nIndex<0||candidate.nIndex>=guassParam.wNodeCount||candidate.nIndexUp>=guassParam.wNodeCount||candidate.nIndexDown>=guassParam.wNodeCount)
++    throw std::invalid_argument("tailwater boundary requires valid opening gate endpoints");
++  candidate.BC_sill_wh=config.at("sill_elevation_m").get<double>();
++  candidate.BC_allow_reverse=config.value("allow_reverse",true);
++  candidate.BC_max_gap_seconds=config.value("max_gap_seconds",21600);
++  if (!std::isfinite(candidate.BC_sill_wh)||candidate.BC_max_gap_seconds<1)
++    throw std::invalid_argument("invalid sill datum or stage gap limit");
++  decltype(canal_param.boundary_stage2)::mapped_type samples;
++  time_t previous=0;bool first=true;
++  for (const auto& sample:config.at("samples")) {
++    time_t time=static_cast<time_t>(sample.at("time").get<long long>());
++    double wh=sample.at("water_level_m").get<double>();
++    if (!std::isfinite(wh)||(!first&&time<=previous)) throw std::invalid_argument("stage samples must be finite and strictly ordered");
++    if (!first&&difftime(time,previous)>candidate.BC_max_gap_seconds)
++      throw std::invalid_argument("stage sample gap exceeds configured limit");
++    samples[time]=wh;previous=time;first=false;
++  }
++  if (samples.size()<2) throw std::invalid_argument("at least two stage samples required");
++  const time_t now=canal_param.start_t+static_cast<time_t>(canal_param.k*step_t);
++  if (samples.begin()->first>now||samples.rbegin()->first<now)
++    throw std::invalid_argument("stage samples must cover current simulation time");
++  candidate.BC_STAGE_DOWN_LABEL=1;
++  candidate.BC_last_flux=0;candidate.BC_out_volume=0;candidate.BC_last_mass_residual=0;candidate.BC_cumulative_mass_residual=0;
++  // Commit only after validating the complete payload; preserve node topology.
++  canal_param.boundary_stage2[std::string(candidate.name)]=std::move(samples);
++  gates[id]=candidate;gates[id].BC_DOWN_wh=tailwater_stage(gates[id],now);
++  tailwater_error.clear();
++}
++
++nlohmann::json waterSediment::tailwater_report() const {
++  nlohmann::json result={{"error",tailwater_error},{"gates",nlohmann::json::array()}};
++  for (int i=0;i<gatesNum;++i) if (gates[i].BC_STAGE_DOWN_LABEL==1) {
++    const auto& g=gates[i];
++    result["gates"].push_back({{"gate_id",i},{"sill_elevation_m",g.BC_sill_wh},
++      {"water_level_m",g.BC_DOWN_wh},{"flux_m3s",g.BC_last_flux},
++      {"capacity_flux_m3s",g.BC_last_capacity},
++      {"net_out_volume_m3",g.BC_out_volume},{"last_mass_residual_m3",g.BC_last_mass_residual},
++      {"cumulative_mass_residual_m3",g.BC_cumulative_mass_residual},
++      {"nIndex",g.nIndex},{"nIndexUp",g.nIndexUp},{"nIndexDown",g.nIndexDown},
++      {"allow_reverse",g.BC_allow_reverse}});
++  }
++  return result;
++}
++
++bool waterSediment::step_tailwater_pool(stGuassParam& param,int k,const std::vector<int>& indices) {
++  std::set<int> pool(indices.begin(),indices.end());int gate_id=-1;
++  for (int j=0;j<gatesNum;++j) if (gates[j].BC_STAGE_DOWN_LABEL==1
++      &&pool.count(gates[j].nIndexUp)&&pool.count(gates[j].nIndex)) {
++    if (gate_id!=-1) throw std::runtime_error("multiple tailwater endpoints in one pool unsupported");
++    gate_id=j;
++  }
++  if (gate_id<0) return false;
++  if (solver_type!="sediment") throw std::runtime_error("unsupported tailwater solver");
++  auto& g=gates[gate_id];auto& up=pt[g.nIndexUp];auto& down=pt[g.nIndexDown];
++  if (up.neighborNodeCount!=2||up.neighborNodes[1]!=g.nIndex||pt[g.nIndex].neighborNodes[1]!=g.nIndexDown)
++    throw std::runtime_error("tailwater boundary is not an ordered gate endpoint");
++  const time_t time=canal_param.start_t+static_cast<time_t>(k*step_t);
++  g.BC_DOWN_wh=tailwater_stage(g,time);
++  // Existing direct turnout stubs also end at external flow boundaries. Do not
++  // evolve their artificial downstream/free-outfall storage as part of this pool.
++  std::vector<int> outlets{gate_id};
++  for (int j=0;j<gatesNum;++j) if (j!=gate_id&&gates[j].calculation_type==0
++      &&gates[j].type==eDam&&pool.count(gates[j].nIndex)&&pool.count(gates[j].nIndexUp)) outlets.push_back(j);
++  std::set<int> excluded;
++  for (int id:outlets) {
++    const auto& outlet=gates[id];
++    if (outlet.nIndexUp<0||outlet.nIndexDown<0||outlet.nIndexDown>=param.wNodeCount
++        ||pt[outlet.nIndexUp].neighborNodeCount!=2||pt[outlet.nIndexUp].neighborNodes[1]!=outlet.nIndex)
++      throw std::runtime_error("invalid direct-flow outlet topology");
++    if (!excluded.insert(outlet.nIndex).second) throw std::runtime_error("overlapping external outlets");
++    int next=outlet.nIndexDown;
++    while (next!=-1&&pool.count(next)) {
++      if (next<0||next>=param.wNodeCount||!excluded.insert(next).second||pt[next].neighborNodeCount!=2)
++        throw std::runtime_error("external ghost chain contains invalid index, junction or cycle");
++      next=pt[next].neighborNodes[1];
++    }
++  }
++  std::vector<int> active;for (int i:indices) if (!excluded.count(i)) active.push_back(i);
++  const std::array<double,4> mu{{g.Uef,g.Ues,g.Ucf,g.Ucs}};
++  double flux=0;
++  auto holes=id_gates_e_map.find(gate_id);
++  if (holes!=id_gates_e_map.end()&&!holes->second.empty()) {
++    for (const auto& hole:holes->second) flux+=TailwaterGateFlow(hole.second,g.Bwid,up.wh,g.BC_DOWN_wh,g.BC_sill_wh,mu,g.BC_allow_reverse);
++  } else flux=(std::max)(1,g.Eopen_num)*TailwaterGateFlow(g.Eopen,g.Bwid,up.wh,g.BC_DOWN_wh,g.BC_sill_wh,mu,g.BC_allow_reverse);
++  // Positivity limit: never discharge more water than the donor cell holds.
++  g.BC_last_capacity=flux;
++  if (flux>0) flux=(std::min)(flux,(std::max)(0.,SectionAtDepth(up,up.h).area-SectionAtDepth(up,HI).area)*up.step_s/step_t);
++  struct OutletState {int id,right,node_gate;eGateType style;int bQ,stage_count;stGateStage stage;double flux;};
++  std::vector<OutletState> saved;
++  double total_out=0;
++  for (int id:outlets) {
++    auto& outlet=gates[id];auto& donor=pt[outlet.nIndexUp];
++    double out=id==gate_id?flux:outlet.stage[0].dQ;
++    if (out>0) out=(std::min)(out,(std::max)(0.,SectionAtDepth(donor,donor.h).area-SectionAtDepth(donor,HI).area)*donor.step_s/step_t);
++    saved.push_back({id,donor.neighborNodes[1],donor.nGateStyleIndex,donor.gateStyle,outlet.bQ,outlet.stageCount,outlet.stage[0],out});
++    total_out+=out;
++  }
++  double before=0;for (int i:active) before+=SectionAtDepth(pt[i],pt[i].h).area*pt[i].step_s;
++  // Reuse the solver's conservative prescribed-flux outlet for this substep.
++  // Only numerical outlet connectivity is temporary; all original gate links are restored.
++  for (const auto& state:saved) {
++    auto& outlet=gates[state.id];auto& donor=pt[outlet.nIndexUp];
++    donor.neighborNodes[1]=-1;donor.gateStyle=eInput;donor.nGateStyleIndex=state.id;
++    outlet.bQ=1;outlet.stageCount=1;outlet.stage[0].dQ=-state.flux;outlet.stage[0].kValue=k;outlet.stage[0].tValue=1;
++  }
++  auto restore=[&] {for (const auto& state:saved) {
++    auto& outlet=gates[state.id];auto& donor=pt[outlet.nIndexUp];
++    donor.neighborNodes[1]=state.right;donor.gateStyle=state.style;donor.nGateStyleIndex=state.node_gate;
++    outlet.bQ=state.bQ;outlet.stage[0]=state.stage;outlet.stageCount=state.stage_count;
++  }};
++  try {SimGuass_sediment_pools(param,k,active);} catch (...) {restore();throw;}
++  restore();
++  if (param.nanLabel||nanLabel) throw std::runtime_error("tailwater pool solver failed");
++  for (int i:active) if (!std::isfinite(pt[i].h)||!std::isfinite(pt[i].Q))
++    throw std::runtime_error("nonfinite tailwater pool state");
++  for (const auto& state:saved) {
++    auto& outlet=gates[state.id];outlet.BC_last_flux=state.flux;
++    outlet.BC_out_volume+=state.flux*step_t;
++    // A direct flow boundary remains a demand, even when the donor cell limits
++    // execution. Do not silently turn the limited flux into the next demand.
++    if (state.id==gate_id) outlet.stage[0].dQ=state.flux;
++    pt[outlet.nIndexDown].Q=state.flux;
++  }
++  // Reservoir/ghost nodes are excluded from pool storage and are not evolved as another reach.
++  g.BC_DOWN_wh=tailwater_stage(g,time+static_cast<time_t>(step_t));
++  down.h=(std::max)(HI,g.BC_DOWN_wh-down.zb);down.wh=down.zb+down.h;
++  const auto shape=SectionAtDepth(down,down.h);
++  down.A=shape.area;down.B=shape.top_width;down.P=shape.perimeter;down.HR=down.P>0?down.A/down.P:0;
++  down.Q=flux;down.ux=down.A>0?flux/down.A:0;down.DetaH=0;
++  double after=0,external_in=0;
++  for (int i:active) {
++    after+=SectionAtDepth(pt[i],pt[i].h).area*pt[i].step_s;
++    if (std::any_of(saved.begin(),saved.end(),[&](const OutletState& state){return gates[state.id].nIndexUp==i;})) continue;
++    if (pt[i].neighborNodeCount==2&&(pt[i].neighborNodes[0]==-1||pt[i].neighborNodes[1]==-1)) {
++      if (pt[i].gateStyle==eInput) external_in+=gates[pt[i].nGateStyleIndex].stage[0].dQ;
++      else external_in+=pt[i].neighborNodes[0]==-1?pt[i].Q:-pt[i].Q;
++    }
++  }
++  g.BC_last_mass_residual=after-before-step_t*(external_in-total_out);
++  g.BC_cumulative_mass_residual+=g.BC_last_mass_residual;
++  return true;
++}
+diff --git a/src/tailwater_gate.h b/src/tailwater_gate.h
+new file mode 100644
+index 0000000..668e3bf
+--- /dev/null
++++ b/src/tailwater_gate.h
+@@ -0,0 +1,34 @@
++#pragma once
++#include <algorithm>
++#include <array>
++#include <cmath>
++#include <stdexcept>
++
++// Heads share one sill datum. Positive discharge leaves the upstream pool.
++inline double TailwaterGateFlow(double opening, double width, double upstream_wh,
++    double downstream_wh, double sill_wh, const std::array<double,4>& mu,
++    bool allow_reverse=true) {
++  if (!std::isfinite(opening)||!std::isfinite(width)||!std::isfinite(upstream_wh)
++      ||!std::isfinite(downstream_wh)||!std::isfinite(sill_wh)||opening<0||width<=0)
++    throw std::invalid_argument("invalid tailwater gate geometry/head");
++  for (double c:mu) if (!std::isfinite(c)||c<0) throw std::invalid_argument("invalid gate coefficient");
++  if (opening==0 || upstream_wh==downstream_wh) return 0;
++  const bool reverse=downstream_wh>upstream_wh;
++  if (reverse&&!allow_reverse) return 0;
++  const double hi=(std::max)(0.,(std::max)(upstream_wh,downstream_wh)-sill_wh);
++  const double lo=(std::max)(0.,(std::min)(upstream_wh,downstream_wh)-sill_wh);
++  if (hi<=0) return 0;
++  auto smooth=[](double x) {x=std::clamp(x,0.,1.);return x*x*(3-2*x);};
++  const double submerged=smooth((lo/hi-.65)/.10);
++  const double e=(std::min)(opening,hi);
++  const double orifice_free=mu[0]*width*e*std::sqrt(19.6*(std::max)(0.,hi-.65*e));
++  const double orifice_sub=mu[1]*width*e*std::sqrt(19.6*(hi-lo));
++  // Full-open free discharge has units L^3/T: b * H^(3/2) * sqrt(g).
++  const double weir_free=mu[2]*width*hi*std::sqrt(19.6*hi);
++  const double weir_sub=mu[3]*width*lo*std::sqrt(19.6*(hi-lo));
++  const double orifice=(1-submerged)*orifice_free+submerged*orifice_sub;
++  const double weir=(1-submerged)*weir_free+submerged*weir_sub;
++  const double full=smooth((opening/hi-.9)/.1);
++  const double flow=(1-full)*orifice+full*weir;
++  return reverse?-flow:flow;
++}
+diff --git a/src/test.cpp b/src/test.cpp
+index 43002e9..f6174ae 100644
+--- a/src/test.cpp
++++ b/src/test.cpp
+@@ -4363,7 +4363,7 @@ int main(
+     << std::filesystem::current_path()
+     << std::endl;
+   //string dataConfig_path = "../../data/sj/OCIS_dataConfig.json";
+-  string case_name = "sj";// 
++  string case_name = "dayudu";//
+   string dataConfig_path = "./data/" + case_name + "/OCIS_dataConfig.json";
+   if (!isExist(dataConfig_path)) {
+     cout << "dataConfig_path: " << dataConfig_path << "not exist! " << endl;
+@@ -4395,7 +4395,7 @@ int main(
+   string dirpath = dataConfig_json["SIM"]["dirpath"];
+   string mesh_path = dataConfig_json["SIM"]["edges_path"];
+   string elevation_path = dirpath + mesh_path;
+-  //set_CrossSection(solver, elevation_path.c_str(), 0, 200);
++  set_CrossSection(solver, elevation_path.c_str(), 0, 200);
+ 
+   string pool_info = get_pool_info_sim(solver);
+ 
+diff --git a/src/waterSediment.cpp b/src/waterSediment.cpp
+index 1609ea2..a3e7743 100644
+--- a/src/waterSediment.cpp
++++ b/src/waterSediment.cpp
+@@ -1,5 +1,6 @@
+ 
+ #include "waterSediment.h"
++#include "tailwater_boundary_impl.h"
+ int  num=2;
+ double InQ=1;
+ double closetime=10;
+@@ -776,12 +777,8 @@ void waterSediment::SimGuass_Roe_new(stGuassParam& param, int k)
+       pt[i].hd = pt[i].h;
+       pt[i].Qd = pt[i].Q;
+       pt[i].DetaH = 0;
+-      pt[i].AI = pt[i].tanb * HI * HI + pt[i].Width * HI;
+-      pt[i].A = pt[i].tanb * pt[i].h * pt[i].h + pt[i].Width * pt[i].h;
+-      if (pt[i].A < pt[i].AI) { pt[i].A = pt[i].AI; }
+-      pt[i].B = 2.0 * pt[i].tanb * pt[i].h + pt[i].Width;
+-      double P = pt[i].Width + 2.0 * pt[i].h / pt[i].cosb;
+-      pt[i].HR = pt[i].A / P;
++      UpdateLookupSection(pt[i], HI);
++      double P = pt[i].P;
+       if (pt[i].h < HI || pt[i].wh < pt[i].zb + HI) {
+         pt[i].h = HI;
+         pt[i].wh = pt[i].zb + HI;
+@@ -796,7 +793,7 @@ void waterSediment::SimGuass_Roe_new(stGuassParam& param, int k)
+         //Sleep(1000);
+         //exit(-1);
+       }
+-      pt[i].Fr = pt[i].ux / sqrt(9.8 * pt[i].h);
++      pt[i].Fr = pt[i].ux / (pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(9.8 * pt[i].h));
+     }
+     for (int inte = 0; inte < 5; inte++)
+     {
+@@ -813,8 +810,8 @@ void waterSediment::SimGuass_Roe_new(stGuassParam& param, int k)
+             double WL = 0.5 * (pt[pt[i].neighborNodes[0]].wh + pt[i].wh);
+             if (pt[i].wh < pt[pt[i].neighborNodes[0]].zb) { WL = pt[i].wh; }
+ 
+-            double RoeUL = (sqrt(pt[i].h) * pt[i].ux + sqrt(pt[pt[i].neighborNodes[0]].h) * pt[pt[i].neighborNodes[0]].ux) / (sqrt(pt[i].h) + sqrt(pt[pt[i].neighborNodes[0]].h));
+-            double RoeUR = (sqrt(pt[i].h) * pt[i].ux + sqrt(pt[pt[i].neighborNodes[1]].h) * pt[pt[i].neighborNodes[1]].ux) / (sqrt(pt[i].h) + sqrt(pt[pt[i].neighborNodes[1]].h));
++            double RoeUL = (sqrt(pt[i].section_lookup ? pt[i].A : pt[i].h) * pt[i].ux + sqrt(pt[pt[i].neighborNodes[0]].section_lookup ? pt[pt[i].neighborNodes[0]].A : pt[pt[i].neighborNodes[0]].h) * pt[pt[i].neighborNodes[0]].ux) / (sqrt(pt[i].section_lookup ? pt[i].A : pt[i].h) + sqrt(pt[pt[i].neighborNodes[0]].section_lookup ? pt[pt[i].neighborNodes[0]].A : pt[pt[i].neighborNodes[0]].h));
++            double RoeUR = (sqrt(pt[i].section_lookup ? pt[i].A : pt[i].h) * pt[i].ux + sqrt(pt[pt[i].neighborNodes[1]].section_lookup ? pt[pt[i].neighborNodes[1]].A : pt[pt[i].neighborNodes[1]].h) * pt[pt[i].neighborNodes[1]].ux) / (sqrt(pt[i].section_lookup ? pt[i].A : pt[i].h) + sqrt(pt[pt[i].neighborNodes[1]].section_lookup ? pt[pt[i].neighborNodes[1]].A : pt[pt[i].neighborNodes[1]].h));
+             //double RoeUL = 0.5*(pt[i].ux+pt[pt[i].neighborNodes[0]].ux);
+             //double RoeUR = 0.5*(pt[i].ux+pt[pt[i].neighborNodes[1]].ux);
+ 
+@@ -1060,22 +1057,22 @@ void waterSediment::SimGuass_Roe_new(stGuassParam& param, int k)
+             QR1 = 0.5 * 0.5 * (pt[pt[i].neighborNodes[1]].ux + pt[i].ux) * (pt[pt[i].neighborNodes[1]].A + pt[i].A) - 0.5 * 0.5 * fabs(pt[pt[i].neighborNodes[1]].ux + pt[i].ux) * (pt[pt[i].neighborNodes[1]].A - pt[i].A);
+             if (pt[pt[i].neighborNodes[0]].neighborNodeCount == 3)//pt[i].Q;//
+             {
+-              double PtneighborA = (pt[i].tanb * pt[pt[i].neighborNodes[0]].h * pt[pt[i].neighborNodes[0]].h + pt[i].Width * pt[pt[i].neighborNodes[0]].h);
++              double PtneighborA = (SectionAtDepth(pt[i], pt[pt[i].neighborNodes[0]].h).area);
+               QR0 = 0.5 * (pt[i].ux) * (PtneighborA + pt[i].A) - 0.5 * fabs(pt[i].ux) * (pt[i].A - PtneighborA);
+             }
+             if (pt[pt[i].neighborNodes[1]].neighborNodeCount == 3)
+             {
+-              double PtneighborA = (pt[i].tanb * pt[pt[i].neighborNodes[1]].h * pt[pt[i].neighborNodes[1]].h + pt[i].Width * pt[pt[i].neighborNodes[1]].h);
++              double PtneighborA = (SectionAtDepth(pt[i], pt[pt[i].neighborNodes[1]].h).area);
+               QR1 = 0.5 * (pt[i].ux) * (PtneighborA + pt[i].A) - 0.5 * fabs(pt[i].ux) * (PtneighborA - pt[i].A);
+             }
+             if (pt[pt[i].neighborNodes[0]].neighborNodeCount != 3 && pt[pt[i].neighborNodes[1]].neighborNodeCount != 3)
+             {
+-              if (pt[pt[i].neighborNodes[0]].Width / pt[i].Width < 0.9 || pt[pt[i].neighborNodes[0]].Width / pt[i].Width > 1.1)
++              if (SectionEffectiveWidth(pt[pt[i].neighborNodes[0]]) / SectionEffectiveWidth(pt[i]) < 0.9 || SectionEffectiveWidth(pt[pt[i].neighborNodes[0]]) / SectionEffectiveWidth(pt[i]) > 1.1)
+               {
+                 QR0 = pt[pt[i].neighborNodes[0]].Q;
+                 QR1 = pt[pt[i].neighborNodes[1]].Q;
+               }
+-              if (pt[i].Width / pt[pt[i].neighborNodes[1]].Width < 0.9 || pt[i].Width / pt[pt[i].neighborNodes[1]].Width > 1.1)
++              if (SectionEffectiveWidth(pt[i]) / SectionEffectiveWidth(pt[pt[i].neighborNodes[1]]) < 0.9 || SectionEffectiveWidth(pt[i]) / SectionEffectiveWidth(pt[pt[i].neighborNodes[1]]) > 1.1)
+               {
+                 QR0 = pt[pt[i].neighborNodes[0]].Q;
+                 QR1 = pt[pt[i].neighborNodes[1]].Q;
+@@ -1219,7 +1216,7 @@ void waterSediment::SimGuass_Roe_new(stGuassParam& param, int k)
+               QR0 = 0;
+               if (fabs(QR1) > 0)
+               {
+-                uuu = pt[i].ux + 3.0 * sqrt(9.8 * pt[i].h); //
++                uuu = pt[i].ux + 3.0 * (pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(9.8 * pt[i].h)); //
+                 QR0 = -pt[i].h * uuu * (1.0 + tan(pai * pt[i].angle / 180));
+                 //if (fabs(QR0) > fabs(QR1)) {
+                 //  QR0 = QR1;
+@@ -1271,7 +1268,7 @@ void waterSediment::SimGuass_Roe_new(stGuassParam& param, int k)
+               double uuu = 0;
+               if (fabs(QR0) > 0)
+               {
+-                uuu = pt[i].ux + 3.0 * sqrt(9.8 * pt[i].h);
++                uuu = pt[i].ux + 3.0 * (pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(9.8 * pt[i].h));
+                 // QR1 = 0;// no border
+                 QR1 = pt[i].h * uuu * (1.0 + tan(pai * pt[i].angle / 180)); // Free movement across borders
+               }
+@@ -1299,7 +1296,7 @@ void waterSediment::SimGuass_Roe_new(stGuassParam& param, int k)
+             + pt[pt[i].neighborNodes[1]].A
+             + pt[pt[i].neighborNodes[2]].A);
+         }
+-        double a = -pt[i].B * pt[i].step_s * (pt[i].h - pt[i].hd) + sumam;
++        double a = -pt[i].step_s * SectionStorageChange(pt[i], pt[i].h, pt[i].hd) + sumam;
+         double b = sumbm;
+         pt[i].DetaH = a / b;
+         pt[i].wh = pt[i].wh + pt[i].DetaH;
+@@ -1315,12 +1312,8 @@ void waterSediment::SimGuass_Roe_new(stGuassParam& param, int k)
+           pt[i].h = HI;
+           pt[i].wh = pt[i].zb + HI;
+         }
+-        pt[i].AI = pt[i].tanb * HI * HI + pt[i].Width * HI;
+-        pt[i].A = pt[i].tanb * pt[i].h * pt[i].h + pt[i].Width * pt[i].h;
+-        if (pt[i].A < pt[i].AI) { pt[i].A = pt[i].AI; }
+-        pt[i].B = 2.0 * pt[i].tanb * pt[i].h + pt[i].Width;
+-        double P = pt[i].Width + 2.0 * pt[i].h / pt[i].cosb;
+-        pt[i].HR = pt[i].A / P;
++        UpdateLookupSection(pt[i], HI);
++      double P = pt[i].P;
+ 
+         if (k % int(60 / step_t) == 0)
+         {
+@@ -1363,12 +1356,8 @@ void waterSediment::SimGuass_Roe_new_pools(stGuassParam& param, int k,std::vecto
+       pt[i].hd = pt[i].h;
+       pt[i].Qd = pt[i].Q;
+       pt[i].DetaH = 0;
+-      pt[i].AI = pt[i].tanb * HI * HI + pt[i].Width * HI;
+-      pt[i].A = pt[i].tanb * pt[i].h * pt[i].h + pt[i].Width * pt[i].h;
+-      if (pt[i].A < pt[i].AI) { pt[i].A = pt[i].AI; }
+-      pt[i].B = 2.0 * pt[i].tanb * pt[i].h + pt[i].Width;
+-      double P = pt[i].Width + 2.0 * pt[i].h / pt[i].cosb;
+-      pt[i].HR = pt[i].A / P;
++      UpdateLookupSection(pt[i], HI);
++      double P = pt[i].P;
+       if (pt[i].h < HI || pt[i].wh < pt[i].zb + HI) {
+         pt[i].h = HI;
+         pt[i].wh = pt[i].zb + HI;
+@@ -1384,7 +1373,7 @@ void waterSediment::SimGuass_Roe_new_pools(stGuassParam& param, int k,std::vecto
+         //exit(-1);
+       }
+      
+-      pt[i].Fr = pt[i].ux / sqrt(9.8 * pt[i].h);
++      pt[i].Fr = pt[i].ux / (pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(9.8 * pt[i].h));
+     }
+     for (int inte = 0; inte < 5; inte++)
+     {
+@@ -1403,8 +1392,8 @@ void waterSediment::SimGuass_Roe_new_pools(stGuassParam& param, int k,std::vecto
+             double WL = 0.5 * (pt[pt[i].neighborNodes[0]].wh + pt[i].wh);
+             if (pt[i].wh < pt[pt[i].neighborNodes[0]].zb) { WL = pt[i].wh; }
+ 
+-            double RoeUL = (sqrt(pt[i].h) * pt[i].ux + sqrt(pt[pt[i].neighborNodes[0]].h) * pt[pt[i].neighborNodes[0]].ux) / (sqrt(pt[i].h) + sqrt(pt[pt[i].neighborNodes[0]].h));
+-            double RoeUR = (sqrt(pt[i].h) * pt[i].ux + sqrt(pt[pt[i].neighborNodes[1]].h) * pt[pt[i].neighborNodes[1]].ux) / (sqrt(pt[i].h) + sqrt(pt[pt[i].neighborNodes[1]].h));
++            double RoeUL = (sqrt(pt[i].section_lookup ? pt[i].A : pt[i].h) * pt[i].ux + sqrt(pt[pt[i].neighborNodes[0]].section_lookup ? pt[pt[i].neighborNodes[0]].A : pt[pt[i].neighborNodes[0]].h) * pt[pt[i].neighborNodes[0]].ux) / (sqrt(pt[i].section_lookup ? pt[i].A : pt[i].h) + sqrt(pt[pt[i].neighborNodes[0]].section_lookup ? pt[pt[i].neighborNodes[0]].A : pt[pt[i].neighborNodes[0]].h));
++            double RoeUR = (sqrt(pt[i].section_lookup ? pt[i].A : pt[i].h) * pt[i].ux + sqrt(pt[pt[i].neighborNodes[1]].section_lookup ? pt[pt[i].neighborNodes[1]].A : pt[pt[i].neighborNodes[1]].h) * pt[pt[i].neighborNodes[1]].ux) / (sqrt(pt[i].section_lookup ? pt[i].A : pt[i].h) + sqrt(pt[pt[i].neighborNodes[1]].section_lookup ? pt[pt[i].neighborNodes[1]].A : pt[pt[i].neighborNodes[1]].h));
+             //double RoeUL = 0.5*(pt[i].ux+pt[pt[i].neighborNodes[0]].ux);
+             //double RoeUR = 0.5*(pt[i].ux+pt[pt[i].neighborNodes[1]].ux);
+ 
+@@ -1652,22 +1641,22 @@ void waterSediment::SimGuass_Roe_new_pools(stGuassParam& param, int k,std::vecto
+             QR1 = 0.5 * 0.5 * (pt[pt[i].neighborNodes[1]].ux + pt[i].ux) * (pt[pt[i].neighborNodes[1]].A + pt[i].A) - 0.5 * 0.5 * fabs(pt[pt[i].neighborNodes[1]].ux + pt[i].ux) * (pt[pt[i].neighborNodes[1]].A - pt[i].A);
+             if (pt[pt[i].neighborNodes[0]].neighborNodeCount == 3)//pt[i].Q;//
+             {
+-              double PtneighborA = (pt[i].tanb * pt[pt[i].neighborNodes[0]].h * pt[pt[i].neighborNodes[0]].h + pt[i].Width * pt[pt[i].neighborNodes[0]].h);
++              double PtneighborA = (SectionAtDepth(pt[i], pt[pt[i].neighborNodes[0]].h).area);
+               QR0 = 0.5 * (pt[i].ux) * (PtneighborA + pt[i].A) - 0.5 * fabs(pt[i].ux) * (pt[i].A - PtneighborA);
+             }
+             if (pt[pt[i].neighborNodes[1]].neighborNodeCount == 3)
+             {
+-              double PtneighborA = (pt[i].tanb * pt[pt[i].neighborNodes[1]].h * pt[pt[i].neighborNodes[1]].h + pt[i].Width * pt[pt[i].neighborNodes[1]].h);
++              double PtneighborA = (SectionAtDepth(pt[i], pt[pt[i].neighborNodes[1]].h).area);
+               QR1 = 0.5 * (pt[i].ux) * (PtneighborA + pt[i].A) - 0.5 * fabs(pt[i].ux) * (PtneighborA - pt[i].A);
+             }
+             if (pt[pt[i].neighborNodes[0]].neighborNodeCount != 3 && pt[pt[i].neighborNodes[1]].neighborNodeCount != 3)
+             {
+-              if (pt[pt[i].neighborNodes[0]].Width / pt[i].Width < 0.9 || pt[pt[i].neighborNodes[0]].Width / pt[i].Width > 1.1)
++              if (SectionEffectiveWidth(pt[pt[i].neighborNodes[0]]) / SectionEffectiveWidth(pt[i]) < 0.9 || SectionEffectiveWidth(pt[pt[i].neighborNodes[0]]) / SectionEffectiveWidth(pt[i]) > 1.1)
+               {
+                 QR0 = pt[pt[i].neighborNodes[0]].Q;
+                 QR1 = pt[pt[i].neighborNodes[1]].Q;
+               }
+-              if (pt[i].Width / pt[pt[i].neighborNodes[1]].Width < 0.9 || pt[i].Width / pt[pt[i].neighborNodes[1]].Width > 1.1)
++              if (SectionEffectiveWidth(pt[i]) / SectionEffectiveWidth(pt[pt[i].neighborNodes[1]]) < 0.9 || SectionEffectiveWidth(pt[i]) / SectionEffectiveWidth(pt[pt[i].neighborNodes[1]]) > 1.1)
+               {
+                 QR0 = pt[pt[i].neighborNodes[0]].Q;
+                 QR1 = pt[pt[i].neighborNodes[1]].Q;
+@@ -1811,7 +1800,7 @@ void waterSediment::SimGuass_Roe_new_pools(stGuassParam& param, int k,std::vecto
+               QR0 = 0;
+               if (fabs(QR1) > 0)
+               {
+-                uuu = pt[i].ux + 3.0 * sqrt(9.8 * pt[i].h); //
++                uuu = pt[i].ux + 3.0 * (pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(9.8 * pt[i].h)); //
+                 QR0 = -pt[i].h * uuu * (1.0 + tan(pai * pt[i].angle / 180));
+                 //if (fabs(QR0) > fabs(QR1)) {
+                 //  QR0 = QR1;
+@@ -1863,7 +1852,7 @@ void waterSediment::SimGuass_Roe_new_pools(stGuassParam& param, int k,std::vecto
+               double uuu = 0;
+               if (fabs(QR0) > 0)
+               {
+-                uuu = pt[i].ux + 3.0 * sqrt(9.8 * pt[i].h);
++                uuu = pt[i].ux + 3.0 * (pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(9.8 * pt[i].h));
+                 // QR1 = 0;// no border
+                 QR1 = pt[i].h * uuu * (1.0 + tan(pai * pt[i].angle / 180)); // Free movement across borders
+               }
+@@ -1891,7 +1880,7 @@ void waterSediment::SimGuass_Roe_new_pools(stGuassParam& param, int k,std::vecto
+             + pt[pt[i].neighborNodes[1]].A
+             + pt[pt[i].neighborNodes[2]].A);
+         }
+-        double a = -pt[i].B * pt[i].step_s * (pt[i].h - pt[i].hd) + sumam;
++        double a = -pt[i].step_s * SectionStorageChange(pt[i], pt[i].h, pt[i].hd) + sumam;
+         double b = sumbm;
+         pt[i].DetaH = a / b;
+         pt[i].wh = pt[i].wh + pt[i].DetaH;
+@@ -1907,12 +1896,8 @@ void waterSediment::SimGuass_Roe_new_pools(stGuassParam& param, int k,std::vecto
+           pt[i].h = HI;
+           pt[i].wh = pt[i].zb + HI;
+         }
+-        pt[i].AI = pt[i].tanb * HI * HI + pt[i].Width * HI;
+-        pt[i].A = pt[i].tanb * pt[i].h * pt[i].h + pt[i].Width * pt[i].h;
+-        if (pt[i].A < pt[i].AI) { pt[i].A = pt[i].AI; }
+-        pt[i].B = 2.0 * pt[i].tanb * pt[i].h + pt[i].Width;
+-        double P = pt[i].Width + 2.0 * pt[i].h / pt[i].cosb;
+-        pt[i].HR = pt[i].A / P;
++        UpdateLookupSection(pt[i], HI);
++      double P = pt[i].P;
+ 
+         if (k % int(60 / step_t) == 0)
+         {
+@@ -5068,7 +5053,7 @@ void SimGuass_sediment_right(stGuassParam& param, int k)
+                     Hu = pt[g.nIndexDown].h;
+                   }
+ 
+-                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, pt[i].Width,Hu, Hd, g.stage[0].dQ);
++                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, g.Bwid,Hu, Hd, g.stage[0].dQ);
+                 }
+                 if (pt[i].Q >Flow )
+                 {
+@@ -5113,7 +5098,7 @@ void SimGuass_sediment_right(stGuassParam& param, int k)
+                     Hu = pt[g.nIndexDown].h;
+                   }
+ 
+-                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, pt[i].Width,Hu, Hd, g.stage[0].dQ);
++                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, g.Bwid,Hu, Hd, g.stage[0].dQ);
+                 }
+ 
+                 if (pt[i].Q > Flow)
+@@ -6094,6 +6079,7 @@ void waterSediment::SimGuass_sediment(stGuassParam& param, int k)
+   auto SG_GeometricDepth = [&](const stWaterNode& node,
+     double hydraulicDepth) -> double
+   {
++    if (node.section_lookup) return (std::max)(hydraulicDepth, HI);
+     double depth = hydraulicDepth;
+ 
+     if (depth < HI)
+@@ -6124,6 +6110,11 @@ void waterSediment::SimGuass_sediment(stGuassParam& param, int k)
+     double& topWidth,
+     double& wettedPerimeter) -> void
+   {
++    if (node.section_lookup) {
++      const auto section = node.section_lookup->at(hydraulicDepth);
++      area = section.area; topWidth = section.top_width;
++      wettedPerimeter = section.perimeter; return;
++    }
+     double WH = SG_GeometricDepth(node, hydraulicDepth);
+ 
+     // The ladder canal.
+@@ -6477,7 +6468,7 @@ void waterSediment::SimGuass_sediment(stGuassParam& param, int k)
+     }
+ 
+     pt[i].Fr =
+-      pt[i].ux / sqrt(9.8 * (pt[i].h > HI ? pt[i].h : HI));
++      pt[i].ux / (pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(9.8 * (pt[i].h > HI ? pt[i].h : HI)));
+ 
+ 
+   }
+@@ -6824,7 +6815,7 @@ void waterSediment::SimGuass_sediment(stGuassParam& param, int k)
+                     Hu = pt[g.nIndexDown].h;
+                   }
+ 
+-                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, pt[i].Width, Hu, Hd, g.stage[nn].dQ);
++                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, g.Bwid, Hu, Hd, g.stage[nn].dQ);
+                 }
+                 if (pt[i].Q > Flow)
+                 {
+@@ -6869,7 +6860,7 @@ void waterSediment::SimGuass_sediment(stGuassParam& param, int k)
+                     Hd = pt[g.nIndexUp].h;
+                     Hu = pt[g.nIndexDown].h;
+                   }
+-                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, pt[i].Width, Hu, Hd, g.stage[nn].dQ);
++                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, g.Bwid, Hu, Hd, g.stage[nn].dQ);
+                 }
+                 if (g.calculation_type == 1) {
+                   double eg = g.Eopen;
+@@ -6879,7 +6870,7 @@ void waterSediment::SimGuass_sediment(stGuassParam& param, int k)
+                     Hd = pt[g.nIndexUp].h;
+                     Hu = pt[g.nIndexDown].h;
+                   }
+-                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, pt[i].Width, Hu, Hd, g.stage[nn].dQ);
++                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, g.Bwid, Hu, Hd, g.stage[nn].dQ);
+                   if (id_gates_map[pt[L].nGateStyleIndex] == "d2") {
+                     int a = 0;
+                   }
+@@ -7879,6 +7870,8 @@ void waterSediment::SimGuass_sediment(stGuassParam& param, int k)
+         * pt[i].step_s
+         * (pt[i].Gh - pt[i].GhD)
+         + sumam;
++      if (pt[i].section_lookup)
++        aH = -pt[i].step_s * SectionStorageChange(pt[i], pt[i].h, pt[i].hd) + sumam;
+ 
+       double bH = sumbm;
+ 
+@@ -7930,7 +7923,7 @@ void waterSediment::SimGuass_sediment(stGuassParam& param, int k)
+       }
+ 
+       pt[i].Fr =
+-        pt[i].ux / sqrt(9.8 * (pt[i].h > HI ? pt[i].h : HI));
++        pt[i].ux / (pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(9.8 * (pt[i].h > HI ? pt[i].h : HI)));
+ 
+       if (MaxError < fabs(pt[i].DetaH))
+       {
+@@ -8021,7 +8014,7 @@ void waterSediment::SimGuass_sediment_adaptive(
+                 u = 0.0;
+ 
+             // Gravity wave speed
+-            const double c = sqrt(g * h);
++            const double c = pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(g * h);
+ 
+             // Maximum feature speed
+             const double lambda =
+@@ -8170,6 +8163,7 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+   auto SG_GeometricDepth = [&](const stWaterNode& node,
+     double hydraulicDepth) -> double
+   {
++    if (node.section_lookup) return (std::max)(hydraulicDepth, HI);
+     double depth = hydraulicDepth;
+ 
+     if (depth < HI)
+@@ -8200,6 +8194,11 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+     double& topWidth,
+     double& wettedPerimeter) -> void
+   {
++    if (node.section_lookup) {
++      const auto section = node.section_lookup->at(hydraulicDepth);
++      area = section.area; topWidth = section.top_width;
++      wettedPerimeter = section.perimeter; return;
++    }
+     double WH = SG_GeometricDepth(node, hydraulicDepth);
+ 
+     // The ladder canal.
+@@ -8556,6 +8555,19 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+   int num = param.wNodeCount;
+   stGate* gates = param.gates;
+   int gatesCount = param.gatesCount;
++  const bool strict_boundary = gates && std::any_of(gates, gates+gatesCount, [](const stGate& gate) {return gate.BC_STAGE_DOWN_LABEL==1;});
++  // A physical interface must have exactly the same flux in both control volumes.
++  auto shared_flux = [&](int left, int right) {
++    double al=pt[left].A, ar=pt[right].A, ul=pt[left].ux, ur=pt[right].ux;
++    double b=0,p=0;
++    if (pt[left].neighborNodeCount>=3) {
++      SG_CalcSectionAtDepth(pt[right],pt[left].Gh,al,b,p);ul=ur;
++    }
++    if (pt[right].neighborNodeCount>=3) {
++      SG_CalcSectionAtDepth(pt[left],pt[right].Gh,ar,b,p);ur=ul;
++    }
++    return .25*(ul+ur)*(al+ar)-.25*std::abs(ul+ur)*(ar-al);
++  };
+ 
+   // Prevent input pinging or gate indexing anomalies from causing a direct cross-border crash.
+   if (pt == nullptr || num <= 0)
+@@ -8689,7 +8701,7 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+     }
+ 
+     pt[i].Fr =
+-      pt[i].ux / sqrt(9.8 * (pt[i].h > HI ? pt[i].h : HI));
++      pt[i].ux / (pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(9.8 * (pt[i].h > HI ? pt[i].h : HI)));
+ 
+ 
+   }
+@@ -8697,7 +8709,8 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+   // =========================
+   // 2. Gosteed: Q, C, h
+   // =========================
+-  for (int inte = 0; inte < 5; inte++)
++  bool boundary_converged=false;
++  for (int inte = 0; inte < (strict_boundary ? 50 : 5); inte++)
+   {
+ 
+     // -------------------------
+@@ -9008,7 +9021,7 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+                     Hu = pt[g.nIndexDown].h;
+                   }
+ 
+-                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, pt[i].Width, Hu, Hd, g.stage[nn].dQ);
++                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, g.Bwid, Hu, Hd, g.stage[nn].dQ);
+                 }
+                 if (pt[i].Q > Flow)
+                 {
+@@ -9053,7 +9066,7 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+                     Hd = pt[g.nIndexUp].h;
+                     Hu = pt[g.nIndexDown].h;
+                   }
+-                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, pt[i].Width, Hu, Hd, g.stage[nn].dQ);
++                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, g.Bwid, Hu, Hd, g.stage[nn].dQ);
+                 }
+                 if (g.calculation_type == 1) {
+                   double eg = g.Eopen;
+@@ -9063,7 +9076,7 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+                     Hd = pt[g.nIndexUp].h;
+                     Hu = pt[g.nIndexDown].h;
+                   }
+-                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, pt[i].Width, Hu, Hd, g.stage[nn].dQ);
++                  Flow = GateFlow_hydraulic_multi(eg, &g.Uef, g.Bwid, Hu, Hd, g.stage[nn].dQ);
+ 
+                 }
+ 
+@@ -9806,6 +9819,7 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+ 
+ 
+           double QR2 = 5;
++          if (strict_boundary) {QR0=shared_flux(L,i);QR1=shared_flux(i,R);}
+           double sum_Q = QR1 - QR0;
+           //if (i == 70 && QR2 < QR1) {
+           //  sum_Q = QR1 - QR0 - QR2;
+@@ -9848,6 +9862,8 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+             * fabs(pt[R].ux + pt[i].ux)
+             * (pt[R].A - pt[i].A);
+ 
++          if (strict_boundary) QR1=shared_flux(i,R);
++
+           if (pt[i].gateStyle == eInput)
+           {
+             stGate& g = gates[pt[i].nGateStyleIndex];
+@@ -9912,6 +9928,8 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+ 
+           QR1 = 0.0;
+ 
++          if (strict_boundary) QR0=shared_flux(L,i);
++
+           if (pt[i].gateStyle == eInput)
+           {
+             stGate& g = gates[pt[i].nGateStyleIndex];
+@@ -10002,6 +10020,10 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+             continue;
+           }
+ 
++          if (strict_boundary) {
++            QRR=pt[nb].neighborNodes[1]==i ? -shared_flux(nb,i) : shared_flux(i,nb);
++          }
++
+           sumam =
+             sumam
+             - step_t * QRR
+@@ -10022,6 +10044,13 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+         * pt[i].step_s
+         * (pt[i].Gh - pt[i].GhD)
+         + sumam;
++      if (pt[i].section_lookup || strict_boundary)
++        aH = -pt[i].step_s * SectionStorageChange(pt[i], pt[i].h, pt[i].hd) + sumam;
++      if (strict_boundary && !pt[i].section_lookup) {
++        double old_area=0,old_width=0,old_perimeter=0;
++        SG_CalcSectionAtDepth(pt[i],pt[i].hd,old_area,old_width,old_perimeter);
++        aH=-pt[i].step_s*(pt[i].A-old_area)+sumam;
++      }
+ 
+       double bH = sumbm;
+ 
+@@ -10053,7 +10082,7 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+       }
+ 
+       pt[i].Fr =
+-        pt[i].ux / sqrt(9.8 * (pt[i].h > HI ? pt[i].h : HI));
++        pt[i].ux / (pt[i].section_lookup ? SectionWaveSpeed(pt[i]) : sqrt(9.8 * (pt[i].h > HI ? pt[i].h : HI)));
+ 
+       if (MaxError < fabs(pt[i].DetaH))
+       {
+@@ -10074,11 +10103,14 @@ void waterSediment::SimGuass_sediment_pools(stGuassParam& param, int k, std::vec
+       }
+     }
+ 
+-    if (MaxError < 1e-4)
++    if (MaxError < (strict_boundary ? 1e-9 : 1e-4))
+     {
++      boundary_converged=true;
+       break;
+     }
+   }
++  if (strict_boundary && !boundary_converged)
++    throw std::runtime_error("tailwater pool failed to converge within 50 iterations");
+ }
+ 
+ 
+@@ -10592,28 +10624,7 @@ void waterSediment::set_GatesFlow_calculationType(Ocis_edges& pool_edges,stGate*
+       //pt[g->nIndex+3].BC_STAGE_DOWN_LABEL=g_graph->BC_STAGE_DOWN_LABEL;
+       
+       //BC
+-      if (g_graph->BC_STAGE_DOWN_LABEL == 1) {
+-        int next_nIndex = g->nIndex;
+-        for (int j = 0; j < 100; j++) {
+-          if (pt[next_nIndex].gateStyle == eOutput) {
+-            pt[next_nIndex].BC_STAGE_DOWN_LABEL = g_graph->BC_STAGE_DOWN_LABEL;
+-
+-            pt[g->nIndex].gateStyle = eGateNull;
+-            g->nIndexDown = next_nIndex;
+-            pt[next_nIndex].nGateStyleIndex = i;
+-            cout << next_nIndex << endl;
+-            break;
+-          }
+-          next_nIndex = pt[next_nIndex].neighborNodes[1];
+-        }
+-
+-      }
+-      else
+-      {
+-        //IC
+-
+-
+-      }
++      // A prescribed tailwater is an external gate head, not a topology rewrite.
+ 
+ 
+ 
+@@ -11098,16 +11109,16 @@ void waterSediment::update_gates_e() {
+ 
+     if (g->calculation_type == 1) {
+ 
+-      int pre_nindex = pt[g->nIndex].h;
+-      int next_nindex = pt[g->nIndex].h;
+-      if (pt[g->nIndex].neighborNodes[0] != -1) {
+-        pre_nindex = g->nIndex - 1;
+-      }
+-      if (pt[g->nIndex].neighborNodes[1] != -1) {
+-        next_nindex = g->nIndex + 1;
+-      }
++      if (g->nIndex < 0 || g->nIndex >= num) continue;
++      int pre_nindex = g->nIndexUp;
++      int next_nindex = g->nIndexDown;
++      if (pre_nindex < 0 || pre_nindex >= num) pre_nindex = pt[g->nIndex].neighborNodes[0];
++      if (next_nindex < 0 || next_nindex >= num) next_nindex = pt[g->nIndex].neighborNodes[1];
++      if (pre_nindex < 0 || pre_nindex >= num) pre_nindex = g->nIndex;
++      if (next_nindex < 0 || next_nindex >= num) next_nindex = g->nIndex;
+ 
+       double mu[4] = { g->Uef,g->Ues,g->Ucf,g->Ucs };
++      if (g->BC_STAGE_DOWN_LABEL==1) continue; // Computed from common-datum heads by step_tailwater_pool.
+       double Q = GateFlow_hydraulic_multi(g->Eopen, mu, g->Bwid, pt[pre_nindex].h, pt[next_nindex].h, g->stage[0].dQ);
+       guassParam.gates[i].stage[0].dQ = Q;
+       guassParam.gates[i].stage[0].tValue = 3e8;
+@@ -11525,7 +11536,10 @@ void waterSediment::stepSolver_Roe_pool(string solver, int& episode,int& pool_id
+    
+    //hydraulic - calculation type 
+    update_gates_e();
+-   if (solver_type == "Roe_new") {
++   if (step_tailwater_pool(*param, k, pool_edges.pools[pool_id].sim_nindex_vec)) {
++     // External-head gate boundary handled with a conservative numerical outlet.
++   }
++   else if (solver_type == "Roe_new") {
+      SimGuass_Roe_new_pools(*param, k, pool_edges.pools[pool_id].sim_nindex_vec);
+    }
+    else if(solver_type=="Roe_new_psh")
+@@ -15585,6 +15599,92 @@ void set_canal_Elevation(stWaterNode* pt,std::map<int, string>& id_canalname, Cr
+ }
+ 
+ 
++void waterSediment::load_cross_section_tables(const nlohmann::json& root, int first, int last) {
++  if (solver_type != "sediment" && solver_type != "Roe_new")
++    throw std::invalid_argument("section lookup requires sediment or Roe_new solver");
++  const auto& features = root.at("features");
++  if (first < 0 || last < first || last >= static_cast<int>(features.size()))
++    throw std::invalid_argument("invalid section feature range");
++  struct Pending { int id; double bottom, slope, height;
++    std::unique_ptr<CrossSectionLookup> table; std::vector<int> nodes; };
++  std::vector<Pending> pending;
++  std::set<int> assigned;
++  nlohmann::json report = {{"format", "ocis_section_tables_v1"}, {"success", false},
++    {"loaded_sections", 0}, {"matched_nodes", 0}, {"unresolved_sections", nlohmann::json::array()},
++    {"sections", nlohmann::json::array()}, {"bed_elevations_preserved", true}};
++  for (int f=first; f<=last; ++f) {
++    const auto& p = features.at(f).at("properties");
++    if (!p.contains("hydraulic_lookup") || p.at("hydraulic_lookup").is_null()) {
++      report["unresolved_sections"].push_back(p.value("Name", std::to_string(f)));
++      continue;
++    }
++    const auto& lookup = p.at("hydraulic_lookup");
++    if (lookup.value("closed", true) || lookup.value("overflow_policy", "") != "vertical_wall_extension")
++      throw std::invalid_argument("unsupported closed section or overflow policy");
++    if (lookup.at("columns") != nlohmann::json::array({"h", "A", "T", "P", "I"}))
++      throw std::invalid_argument("unexpected section table columns");
++    std::vector<CrossSectionLookup::Row> rows;
++    for (const auto& r : lookup.at("rows")) {
++      if (!r.is_array() || r.size()!=5) throw std::invalid_argument("invalid hydraulic table row");
++      rows.push_back({r[0].get<double>(),r[1].get<double>(),r[2].get<double>(),r[3].get<double>(),r[4].get<double>()});
++    }
++    if (rows.empty()) throw std::invalid_argument("empty hydraulic table");
++    Pending item{f+1, p.at("model_bottom_width_m").get<double>(), p.at("model_side_slope").get<double>(),
++      rows.back().h, std::make_unique<CrossSectionLookup>(std::move(rows)), {}};
++    if (!std::isfinite(item.bottom) || !std::isfinite(item.slope) || item.bottom<0 || item.slope<0)
++      throw std::invalid_argument("invalid section dimensions");
++    double start=p.at("chainage_start_m"), end=p.at("chainage_end_m");
++    if (!std::isfinite(start) || !std::isfinite(end) || start<0 || end<=start)
++      throw std::invalid_argument("invalid section chainage");
++    const std::string canal = p.at("model_canal");
++    auto canalIt = canal_id_stake_map.find(canal);
++    if (canalIt == canal_id_stake_map.end()) throw std::invalid_argument("section canal absent from mesh/stake.json");
++    for (int node : p.at("model_node_ids").get<std::vector<int>>()) {
++      auto stakeIt = canalIt->second.find(node);
++      if (node<0 || node>=num || stakeIt==canalIt->second.end()
++          || stakeIt->second < start || stakeIt->second >= end || !assigned.insert(node).second)
++        throw std::invalid_argument("invalid, overlapping or mismatched canal/stake node assignment");
++      // A free-surface profile must never silently replace a closed pipe.
++      if (pt[node].type == eCircular || pt[node].Heit>0)
++        throw std::invalid_argument("open-channel table assigned to closed mesh section");
++      item.nodes.push_back(node);
++    }
++    report["sections"].push_back({{"id", item.id}, {"name",p.value("Name", "")},
++      {"matched_nodes",item.nodes.size()}, {"status",p.value("lookup_status", "ready")}});
++    pending.push_back(std::move(item));
++  }
++  if (assigned.empty()) throw std::invalid_argument("no hydraulic section nodes matched");
++  // Parse/validate every table and association before mutating any node.
++  for (auto& item : pending) {
++    auto* table = item.table.get();
++    section_tables.push_back(std::move(item.table));
++    for (int node : item.nodes) {
++      pt[node].section_lookup=table; pt[node].section_lookup_id=item.id;
++      pt[node].Width=item.bottom; pt[node].tanb=item.slope;
++      pt[node].cosb=1/std::sqrt(1+item.slope*item.slope);
++      pt[node].angle=std::atan(item.slope)*180/pai;
++      pt[node].Height=item.height;
++      UpdateLookupSection(pt[node], HI);
++      pt[node].ux=pt[node].Q/(std::max)(pt[node].A,1e-12);
++    }
++  }
++  // Virtual gate nodes inherit the immutable section of their source node.
++  int inherited=0;
++  for (const auto& v : VWN_originNindex) {
++    int node=v.first, source=v.second;
++    if (node<0 || node>=num || source<0 || source>=num || !pt[source].section_lookup
++        || assigned.count(node)) continue;
++    pt[node].section_lookup=pt[source].section_lookup;
++    pt[node].section_lookup_id=pt[source].section_lookup_id;
++    pt[node].Width=pt[source].Width; pt[node].tanb=pt[source].tanb;
++    pt[node].cosb=pt[source].cosb; pt[node].angle=pt[source].angle;
++    UpdateLookupSection(pt[node], HI); ++inherited;
++  }
++  report["success"]=true; report["loaded_sections"]=pending.size();
++  report["matched_nodes"]=assigned.size(); report["virtual_nodes_inherited"]=inherited;
++  cross_section_import_report=std::move(report);
++}
++
+ void waterSediment::get_canal_CrossSection_fromGeojson(string& path, CrossSection& cs_obj, int cs_start, int cs_end) {
+   json elevation_j;
+   string tar_str = "geojson";
+@@ -15598,6 +15698,11 @@ void waterSediment::get_canal_CrossSection_fromGeojson(string& path, CrossSectio
+     if (!isExist(f_str)) {
+       continue;
+     }
++    nlohmann::json root = ReadJson(f_str);
++    if (root.contains("metadata") && root["metadata"].value("format", "") == "ocis_section_tables_v1") {
++      load_cross_section_tables(root, cs_start, cs_end);
++      continue;
++    }
+     std::vector<CrossSectionPoint> crossSections =
+       LoadCrossSectionPoints(f_str.c_str(), cs_start, cs_end);
+     SmoothAllCrossSections(crossSections);
+diff --git a/src/waterSediment.h b/src/waterSediment.h
+index 92e31bd..8ffd8ea 100644
+--- a/src/waterSediment.h
++++ b/src/waterSediment.h
+@@ -3,6 +3,8 @@
+ #define INCLUDE_WATERSEDIMENT
+ #include <queue>
+ #include <limits>
++#include <memory>
++#include <set>
+ #include "MTsveErosion.h"
+ struct SampleMetrics
+ {
+@@ -32,6 +34,11 @@ struct SampleMetrics
+ 
+ class waterSediment {
+ public:
++  std::string tailwater_error;
++  void configure_tailwater(const nlohmann::json& config);
++  double tailwater_stage(const stGate& gate, time_t time) const;
++  bool step_tailwater_pool(stGuassParam& param, int k, const std::vector<int>& indices);
++  nlohmann::json tailwater_report() const;
+   time_t start_t = 0;
+   int epoch = 3600;
+   int episode = 72;
+@@ -101,6 +108,11 @@ public:
+ 
+   CanalParam canal_param;
+   CrossSection cs_obj;
++  // Tables are immutable and retained until solver destruction, including
++  // tables referenced by saved cycle checkpoints after a later import.
++  std::vector<std::unique_ptr<CrossSectionLookup>> section_tables;
++  nlohmann::json cross_section_import_report;
++  void load_cross_section_tables(const nlohmann::json& root, int first, int last);
+   stWaterNode* pt;
+   stWaterNode* ptt;
+   stWaterNode* ini_wNode;
+diff --git a/tests/cross_section_lookup_test.cpp b/tests/cross_section_lookup_test.cpp
+new file mode 100644
+index 0000000..808738f
+--- /dev/null
++++ b/tests/cross_section_lookup_test.cpp
+@@ -0,0 +1,50 @@
++#include "cross_section_lookup.h"
++#include <iostream>
++
++void close(double a, double b, double tolerance=1e-9) {
++  if (std::abs(a-b)>tolerance) throw std::runtime_error("lookup regression mismatch");
++}
++int main() {
++  try {
++    for (double m : {0.0, 1.0}) {
++      std::vector<CrossSectionLookup::Row> rows;
++      for (int i=0; i<=10; ++i) {
++        double h=i*.3;
++        rows.push_back({h, 2*h+m*h*h, 2+2*m*h, 2+2*h*std::sqrt(1+m*m), h*h+m*h*h*h/3});
++      }
++      CrossSectionLookup table(rows);
++      for (int i=0; i<=300; ++i) {
++        double h=i*.01; auto s=table.at(h);
++        close(s.area, 2*h+m*h*h); close(s.top_width, 2+2*m*h);
++        close(s.perimeter, 2+2*h*std::sqrt(1+m*m));
++        close(s.pressure_integral, h*h+m*h*h*h/3);
++        close(table.depth_at_area(s.area), h);
++      }
++      close(table.depth_at_area(table.at(5).area),5);
++      close(table.at(-1).area,0);
++    }
++    // Circular-bottom U: T starts at zero, and inverse lookup remains stable
++    // near dry bed. Tables use polygonal approximation of the arc.
++    std::vector<CrossSectionLookup::Row> rows{{0,0,0,0,0}};
++    const double r=1.7;
++    for (int i=1; i<=1000; ++i) {
++      double h=r*i/1000, width=2*std::sqrt(2*r*h-h*h);
++      const auto& p=rows.back(); double d=h-p.h;
++      rows.push_back({h,p.area+(p.width+width)*d/2,width,
++        2*r*std::acos(1-h/r),p.pressure+p.area*d+p.width*d*d/2+(width-p.width)*d*d/6});
++    }
++    CrossSectionLookup u(rows);
++    close(u.at(r).area,3.141592653589793*r*r/2,1e-4);
++    close(u.at(r).perimeter,3.141592653589793*r,1e-9);
++    for (double h : {.00001,.1,1.0,1.7,2.4}) close(u.depth_at_area(u.at(h).area),h);
++    // Discrete storage uses A(h)-A(h_old), not T(h)*(h-h_old).
++    close(u.at(1.2).area-u.at(.4).area,
++      u.at(u.depth_at_area(u.at(.4).area+(u.at(1.2).area-u.at(.4).area))).area-u.at(.4).area);
++    bool rejected=false;
++    try { CrossSectionLookup bad({{0,0,2,2,0},{1,99,2,4,1}}); }
++    catch (const std::invalid_argument&) { rejected=true; }
++    if (!rejected) throw std::runtime_error("inconsistent table accepted");
++    std::cout << "PASS rectangle/trapezoid/U, inverse, dry/overflow and inconsistent-table rejection\n";
++    return 0;
++  } catch (const std::exception& e) { std::cerr<<e.what()<<"\n"; return 1; }
++}
+diff --git a/tests/cross_section_solver_test.cpp b/tests/cross_section_solver_test.cpp
+new file mode 100644
+index 0000000..f76cb64
+--- /dev/null
++++ b/tests/cross_section_solver_test.cpp
+@@ -0,0 +1,51 @@
++#include "waterSediment.h"
++#include <iostream>
++#include "tailwater_boundary_test.h"
++
++int main() {
++  try {
++    std::vector<CrossSectionLookup::Row> rows{{0,0,0,0,0}};
++    const double r=1.7;
++    for (int i=1;i<=1000;++i) {
++      double h=r*i/1000,w=2*std::sqrt(2*r*h-h*h),d=h-rows.back().h;
++      auto p=rows.back();
++      rows.push_back({h,p.area+(p.width+w)*d/2,w,2*r*std::acos(1-h/r),
++        p.pressure+p.area*d+p.width*d*d/2+(w-p.width)*d*d/6});
++    }
++    CrossSectionLookup table(rows);
++    for (int algorithm=0;algorithm<2;++algorithm) {
++      waterSediment solver;
++      std::vector<stWaterNode> nodes(8);
++      std::vector<int> indices;
++      num=static_cast<int>(nodes.size());step_t=.1;
++      stGuassParam param{};param.wNode=nodes.data();param.wNodeCount=num;
++      solver.pt=nodes.data();
++      for (int i=0;i<num;++i) {
++        auto& n=nodes[i];n.nIndex=i;n.neighborNodeCount=2;
++        n.neighborNodes[0]=(i+num-1)%num;n.neighborNodes[1]=(i+1)%num;
++        n.h=1;n.wh=1;n.step_s=50;n.step_t=.1;n.ratio=.1/50;
++        n.type=eTrapezoid;n.gateStyle=eGateNull;n.manning=.015;
++        n.section_lookup=&table;n.section_lookup_id=1;n.cosb=1;n.GCoe=1;
++        UpdateLookupSection(n,HI);indices.push_back(i);
++      }
++      auto step=[&](int k) {
++        if (algorithm==0) solver.SimGuass_sediment_pools(param,k,indices);
++        else solver.SimGuass_Roe_new_pools(param,k,indices);
++      };
++      for (int k=0;k<20;++k) step(k);
++      for (const auto& n:nodes)
++        if (std::abs(n.h-1)>1e-10 || std::abs(n.Q)>1e-10)
++          throw std::runtime_error("closed periodic lake at rest changed");
++      nodes[0].h=1.1;nodes[0].wh=1.1;UpdateLookupSection(nodes[0],HI);
++      double initial=0;for (const auto& n:nodes) initial+=table.at(n.h).area*n.step_s;
++      for (int k=0;k<20;++k) step(k);
++      double final=0;for (const auto& n:nodes) final+=table.at(n.h).area*n.step_s;
++      double relative=std::abs(final-initial)/initial;
++      if (!std::isfinite(relative) || relative>1e-5)
++        throw std::runtime_error("closed periodic volume conservation failed");
++      std::cout<<(algorithm==0?"sediment":"Roe_new")<<": static lake PASS; relative volume error="<<relative<<"\n";
++    }
++    TestTailwaterBoundary();
++    return 0;
++  } catch(const std::exception& e) {std::cerr<<e.what()<<"\n";return 1;}
++}
+diff --git a/tests/tailwater_boundary_test.h b/tests/tailwater_boundary_test.h
+new file mode 100644
+index 0000000..ed7aa66
+--- /dev/null
++++ b/tests/tailwater_boundary_test.h
+@@ -0,0 +1,98 @@
++#pragma once
++#include "tailwater_gate.h"
++inline void TestTailwaterBoundary() {
++  const std::array<double,4> mu{{.6,.6,.3,.8}};
++  auto require=[](bool pass,const char* message) {if (!pass) throw std::runtime_error(message);};
++  auto q=[&](double e,double u,double d,double z=100.) {return TailwaterGateFlow(e,3,u,d,z,mu);};
++  require(q(0,101,100.5)==0,"closed gate leaked");
++  require(q(.2,101,101)==0,"equal heads are not static");
++  require(q(.2,101,100.5)>q(.2,101,100.9),"tailwater sensitivity wrong");
++  require(std::abs(q(.2,101,100.5)+q(.2,100.5,101))<1e-12,"reverse gate flow is not symmetric");
++  require(TailwaterGateFlow(.2,3,100.5,101,100,mu,false)==0,"explicit reverse-flow prohibition ignored");
++  require(std::abs(q(.2,101,100.5)-q(.2,1001,1000.5,1000))<1e-12,"datum shift changed discharge");
++  require(q(.2,99,98)==0,"dry gate has discharge");
++  require(std::abs(q(1-1e-7,101,100)-q(1+1e-7,101,100))<1e-5,"full-open transition discontinuous");
++  require(std::abs(q(4,102,100)/q(2,101,100)-std::pow(2.,1.5))<1e-12,"full-open discharge dimensions wrong");
++  std::vector<CrossSectionLookup::Row> rows{{0,0,0,0,0}};
++  const double radius=1.7;
++  for (int i=1;i<=1000;++i) {
++    double h=radius*i/1000,w=2*std::sqrt(2*radius*h-h*h),dh=h-rows.back().h;auto p=rows.back();
++    rows.push_back({h,p.area+(p.width+w)*dh/2,w,2*radius*std::acos(1-h/radius),
++      p.pressure+p.area*dh+p.width*dh*dh/2+(w-p.width)*dh*dh/6});
++  }
++  CrossSectionLookup table(rows);
++  auto experiment=[&](double opening,double downstream_wh,int steps,bool lookup=false,bool branch=false,double demand=.1) {
++    waterSediment solver;num=branch?12:8;step_t=1.;
++    std::vector<stWaterNode> nodes(num);std::vector<stGate> gs(branch?3:2);std::vector<int> ids;
++    solver.pt=nodes.data();solver.gates=gs.data();solver.gatesNum=static_cast<int>(gs.size());solver.solver_type="sediment";
++    solver.guassParam.wNode=nodes.data();solver.guassParam.wNodeCount=num;
++    solver.guassParam.gates=gs.data();solver.guassParam.gatesCount=solver.gatesNum;
++    solver.canal_param.start_t=1000;
++    for (int i=0;i<num;++i) {
++      auto& n=nodes[i];n.nIndex=i;n.neighborNodeCount=2;n.neighborNodes[0]=i-1;n.neighborNodes[1]=i+1<num?i+1:-1;
++      n.zb=100;n.h=1;n.wh=101;n.Width=3;n.B=3;n.cosb=1;n.GCoe=1;n.type=eTrapezoid;n.gateStyle=eGateNull;
++      n.step_s=50;n.step_t=1;n.ratio=1./50;n.manning=.015;n.A=3;n.P=5;n.HR=.6;n.AI=3*HI;ids.push_back(i);
++      if (lookup) {n.Width=0;n.section_lookup=&table;n.section_lookup_id=1;UpdateLookupSection(n,HI);}
++    }
++    nodes[7].zb=99.7;nodes[7].h=1.3;nodes[7].wh=101;
++    nodes[0].gateStyle=eInput;nodes[0].nGateStyleIndex=0;
++    gs[0].type=eInput;gs[0].nIndex=0;gs[0].bQ=1;gs[0].stageCount=1;gs[0].stage[0].dQ=0;gs[0].stage[0].tValue=100000;
++    nodes[6].gateStyle=eDam;nodes[6].nGateStyleIndex=1;nodes[7].gateStyle=eOutput;
++    auto& g=gs[1];g.type=eDam;g.nIndex=6;g.nIndexUp=5;g.nIndexDown=7;g.calculation_type=1;
++    g.bQ=1;g.stageCount=1;g.stage[0].tValue=100000;g.Eopen=opening;g.Bwid=3;
++    std::strcpy(g.name,"test_gate");
++    nodes[7].neighborNodes[1]=-1;
++    if (branch) {
++      nodes[2].neighborNodeCount=3;nodes[2].neighborNodes[2]=8;
++      nodes[8].neighborNodes[0]=2;
++      nodes[9].gateStyle=eDam;nodes[9].nGateStyleIndex=2;nodes[11].gateStyle=eOutput;
++      auto& turnout=gs[2];turnout.type=eDam;turnout.nIndex=9;turnout.nIndexUp=8;turnout.nIndexDown=10;
++      turnout.calculation_type=0;turnout.bQ=1;turnout.stageCount=1;turnout.stage[0].dQ=demand;turnout.stage[0].tValue=100000;
++      // Abrupt section change tests shared flux across unlike adjacent cells.
++      nodes[3].Width=2;nodes[3].tanb=.4;
++    }
++    nlohmann::json config={{"gate_id",1},{"sill_elevation_m",100.},
++      {"samples",{{{"time",1000},{"water_level_m",downstream_wh}},{{"time",5000},{"water_level_m",downstream_wh}}}}};
++    solver.configure_tailwater(config);
++    double initial=0;for (int i=0;i<6;++i) initial+=SectionAtDepth(nodes[i],nodes[i].h).area*50.;
++    if (branch) initial+=SectionAtDepth(nodes[8],nodes[8].h).area*50.;
++    for (int k=0;k<steps;++k) {
++      try {
++        require(solver.step_tailwater_pool(solver.guassParam,k,ids),"stage boundary not activated");
++      } catch (const std::runtime_error&) {
++        if (branch) require(gs[2].stage[0].dQ==demand&&nodes[8].neighborNodes[1]==9,
++                            "failed trial changed demand or topology");
++        throw;
++      }
++      require(!solver.nanLabel&&!solver.guassParam.nanLabel,"nonfinite boundary solution");
++      require(nodes[5].neighborNodes[1]==6&&nodes[6].gateStyle==eDam&&g.nIndexDown==7,"gate topology changed");
++      require(std::abs(nodes[7].wh-downstream_wh)<1e-12,"external stage not applied");
++      if (branch) require(gs[2].stage[0].dQ==demand,"flow demand overwritten by executed flux");
++    }
++    double final=0;for (int i=0;i<6;++i) final+=SectionAtDepth(nodes[i],nodes[i].h).area*50.;
++    if (branch) final+=SectionAtDepth(nodes[8],nodes[8].h).area*50.;
++    const double residual=final-initial+g.BC_out_volume+(branch?gs[2].BC_out_volume:0);
++    std::cout<<"tailwater e="<<opening<<" downstream="<<downstream_wh<<" net_out="<<g.BC_out_volume<<" mass_residual="<<residual<<"\n";
++    require(std::abs(residual)/initial<1e-5,"tailwater pool mass balance failed");
++    auto malformed=config;malformed["samples"][1]["time"]=1000;
++    try {solver.configure_tailwater(malformed);require(false,"duplicate stage accepted");} catch (const std::invalid_argument&) {}
++    require(solver.tailwater_stage(g,1000)==downstream_wh,"malformed import changed valid stage");
++    return final;
++  };
++  const double closed=experiment(0,100.5,100);
++  const double equal=experiment(.2,101,100);
++  const double low=experiment(.2,100.5,100);
++  const double high=experiment(.2,100.9,100);
++  const double reverse=experiment(.2,101.2,100);
++  experiment(.2,100.5,100,true);
++  experiment(.2,101.2,100,true);
++  experiment(.2,100.5,100,false,true);
++  try {experiment(0,101,2,false,true,200.);} catch (const std::runtime_error& error) {
++    require(std::string(error.what()).find("failed to converge")!=std::string::npos,
++            "excessive candidate failed for an unexpected reason");
++    std::cout<<"excessive flow candidate rejected; demand and topology preserved PASS\n";
++  }
++  require(std::abs(closed-900)<1e-8&&std::abs(equal-900)<1e-8,"static lake changed");
++  require(low<high&&high<equal&&reverse>equal,"pool does not respond to prescribed heads");
++  std::cout<<"tailwater boundary: law, sensitivity, closure, datum, reverse, topology, mass PASS\n";
++}

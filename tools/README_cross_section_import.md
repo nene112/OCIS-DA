@@ -1,29 +1,49 @@
-# 指定 DLL 与断面读取支持
+# 指定 DLL 与横断面查表
 
-`tools/OcisMILPNet.dll`及配套依赖来自用户指定的 `build_manual_no_waga/OcisMILPNet_dll/Release` 目录。该版本已移植交互周期快照修复，重新编译并复制到当前项目。来源与哈希见 `native_manual_no_waga_manifest.json`。切换前 DLL 与依赖保存在 `native_backups/before_manual_no_waga`，本版本修复前 DLL 保存在 `native_backups/manual_no_waga_before_checkpoint.dll`。
+当前 DLL 从用户指定源码仓库的 build_manual_no_waga/OcisMILPNet_dll/Release 编译并复制到 tools。交互周期水力状态、时钟、闸门和缓存恢复修复保留。哈希见 native_manual_no_waga_manifest.json。
 
-Python 包装器支持：
-
-```python
-client.set_CrossSection(json_file_or_directory, cs_start=0, cs_end=44)
-```
-
-调用前须先初始化水动力网格，并执行端点和闸门类型校正。索引从 0 开始且包含两端；省略 cs_end 时读取至文件末尾。坐标必须是三个有限数值。原汇总 JSON 的 geometry 为 null，会明确报错，不将零条导入当作成功。
-
-单文件通过临时独立目录导入，避免扫描其他案例的 GeoJSON；目录方式会写出 ReWriteMesh。路径使用 Windows 本地编码传递。
-
-复现测试：
+## 生成与导入
 
 ```powershell
+python tools/prepare_dayudu_cross_section_tables.py
 python tools/import_dayudu_cross_sections.py
 ```
 
-兼容副本与报告位于 `data/dayudu/output/cross_section_import_manual_no_waga`。副本保留原断面表所有记录，缺测 XYZ 使用现有 mesh/input.txt 和 neighborId.txt，沿总干渠 next-node 路径累计平面距离，就近关联每段起点桩号。模型路径长 31575.078 m，表覆盖 30750 m，关联仅为近似模型坐标，不能作为实测。每条 geometry_provenance 记录所用节点及距离偏差。原 JSON 保持不变。
+输入仍是 input/CrossSection_dayudu_summary.geojson；原始 CSV 字段全部保留。输出 input/CrossSection_dayudu_hydraulic_tables.geojson 以及同名 .report.json。
 
-DLL 日志确认读取 45 条记录，匹配 298 个节点，其中 297 个节点高程改变。逐节点验证水深保持不变、wh=zb+h，底宽与边坡不变。接口当前仅平滑并更新床面高程，不读取横断面形状数组、底宽、边坡或圆弧参数。此次验证副本没有配置为后续重建的实测断面数据。
+新版格式 metadata.format=ocis_section_tables_v1；每段包含 model_canal、桩号区间、model_node_ids、局部 points_xz 和 hydraulic_lookup。查表列为 h,A,T,P,I，单位分别为 m,m²,m,m,m³。模型节点按 mesh/stake.json 的总干渠桩号映射精确关联，不推导 GIS 坐标或绝对底高程。原模型 zb 保持不变。
 
-此版本的 save_states/set_states 已恢复完整节点变量、内部时钟、包装器步号、闸门、开度映射、池段容积与结果缓存。分水流量诊断也使用正确分支记录，避免读取零流量虚拟节点。源码补丁见 native_patches/manual_no_waga_cycle_checkpoint.patch。
+查表通过 client.set_CrossSection(path) 导入；client.get_cross_section_report() 返回成功、匹配节点、未解决断面及超过表内最大水深的节点数。get_stepdata_sim 支持 node_section_id、node_A、node_B、node_P、node_HR、node_pressure_integral。
 
-分别在原网格及显式导入兼容 JSON 后运行8周期 A/B/A 回归，全部通过。带 JSON 的验证逐节点确认导入后的床面高程在所有试算、恢复及8次最终推进后保持不变，每周期最终只推进3600秒。简要报告位于 data/dayudu/output/checkpoint_regression_manual_no_waga_json/verification_summary.json。
+局部断面覆盖规则参数。面积、顶宽、湿周、摩阻水力半径进入 sediment 和 Roe_new 的全渠与单渠段求解。储水项使用真实 A(h)-A(h_old)，波速用 sqrt(g*A/T)。现有水面梯度形式的压力项保持不变，用查表 A 参与计算；不额外叠加压力积分梯度，以免破坏静水平衡。I 保存为一致的静水压力积分，供诊断及后续守恒通量实现使用。
 
-已有边界重建脚本尚未自动调用此接口。带 JSON 的验证仿真显式调用 set_CrossSection，不能将此测试等同于历史重建结果已经使用该 JSON。此次接口仍未应用原表中的横断面形状数据。
+断面表中顶宽按水深分段线性插值；A 与 I 对顶宽插值积分，保证 dA/dh=T，I 的水深导数为 A。A→h 使用单调反查。表顶以上明确采用竖直延墙外推，不代表漫溢或有压管流模型。
+
+## 数据解释与限制
+
+U 形断面 D3.4/D3.2 解释为直径，17°按侧壁与竖直方向的夹角；采用与圆底相切的侧壁。原表 h+0.6 与口宽关系可核对：口宽对应加高前的渠高。弧底梯形按所给半径及边坡建立相切圆弧。
+
+36 个断面可导入，包含全部三个 U 形断面；2 个弧底断面 DYD_016、DYD_020 的口宽与半径、边坡、渠高存在冲突，状态为 ready_with_warning，当前由明确给定的半径和边坡确定形状，须核实原表。9 个未解决断面明确保留原模型：缺边坡的 DYD_003，缺尺寸的渐变段 DYD_034，以及 5 个隧洞、2 个涵管。有压闭合结构不能用敞口断面外推替代；不猜测 DN00*2 的缺失直径。
+
+## 自动接入重建
+
+案例 OCIS_dataConfig.json 的 SIM 配置新增：
+
+```json
+"cross_section_path": "input/CrossSection_dayudu_hydraulic_tables.geojson"
+```
+
+_load_client 在网格、初始水深及底高程设置完成后导入断面。相对路径以案例目录解析，隔离运行会随案例复制。dayudu 当前配置已启用。未解决断面会提示部分导入，旧 DLL 缺少报告接口时拒绝查表文件。
+
+## 验证
+
+明渠缺参数补全：DYD_003从相邻上游同类圆底梯形DYD_002借用边坡1:1；DYD_034以相邻上游DYD_033的矩形断面近似，渠高2.1m、口宽2.5m、边坡0。生成器保留原始CSV字段和transition类型，以parameter_imputation记录供体及采用值，两处标记ready_with_warning。当前可导入38个断面，7个封闭结构继续保留原模型几何。以后的生成及仿真输入都会采用此补全；此前仿真报告仍对应补全前版本，未自动重算。
+
+```powershell
+python test_native_cycle_checkpoint.py --cross-section data/dayudu/input/CrossSection_dayudu_hydraulic_tables.geojson
+python tools/test_dayudu_cross_section_lookup.py
+```
+
+原生源码仓库另有 cross_section_lookup_test 和 cross_section_solver_test 两个 EXCLUDE_FROM_ALL 测试目标，分别覆盖几何/反查及实际求解器的封闭周期静水、体积守恒。
+
+真实 U 渠段具有自由出流边界，与封闭静水测试分开。真实渠段检查查表属性、有限推进、回滚重现及非法导入不改变状态。结果保存在 output/cross_section_lookup。重建水位验收标准未改变，查表测试通过不等于整段边界重建已满足水位指标。

@@ -180,7 +180,7 @@ class OcisMILPNet:
 		self._step_k = self._bind("step_k", [ctypes.c_void_p], None)
   
 		self._set_step_t = self._bind("set_step_t", [ctypes.c_void_p, ctypes.c_double], ctypes.c_double)
-		self._set_delta_t = self._bind("set_delta_t", [ctypes.c_void_p, ctypes.c_double], ctypes.c_int)
+		self._set_delta_t = self._bind("set_delta_t", [ctypes.c_void_p, ctypes.c_int], None)
   
 		self._read_data_sim = self._bind("read_data_sim", [ctypes.c_void_p, ctypes.c_char_p], None)
 		self._read_data_sim_Roe = self._bind("read_data_sim_Roe", [ctypes.c_void_p, ctypes.c_char_p], None)
@@ -191,6 +191,7 @@ class OcisMILPNet:
 		self._Split_mesh = self._bind("Split_mesh", [ctypes.c_void_p], None)
 		self._Auto_correct_endpoint = self._bind("Auto_correct_endpoint", [ctypes.c_void_p], None)
 		self._set_CrossSection = self._bind_optional("set_CrossSection", [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int, ctypes.c_int], None)
+		self._get_cross_section_report = self._bind_optional("get_cross_section_report", [ctypes.c_void_p], ctypes.c_char_p)
 		self._Auto_correct_gates_calculationType = self._bind("Auto_correct_gates_calculationType", [ctypes.c_void_p], None)
   
 		self._stepSolver_sim = self._bind("stepSolver_sim", [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)], None)
@@ -209,6 +210,8 @@ class OcisMILPNet:
       	
        # hydraudynamic - set
 		self._set_GatesBC_sim = self._bind("set_GatesBC_sim", [ctypes.c_void_p, ctypes.c_char_p], None)
+		self._set_GatesDownstreamStage_sim = self._bind_optional("set_GatesDownstreamStage_sim", [ctypes.c_void_p, ctypes.c_char_p], ctypes.c_int)
+		self._get_downstream_stage_report_sim = self._bind_optional("get_downstream_stage_report_sim", [ctypes.c_void_p], ctypes.c_char_p)
 		self._set_GatesFlow_bynIndex_sim = self._bind("set_GatesFlow_bynIndex_sim", [ctypes.c_void_p, ctypes.c_int, ctypes.c_double], None)
 		self._set_GatesFlow_byID_sim = self._bind("set_GatesFlow_byID_sim", [ctypes.c_void_p, ctypes.c_int, ctypes.c_double], None)
 		self._set_GatesFlow_mu_byID_sim = self._bind_optional("set_GatesFlow_mu_byID_sim", [ctypes.c_void_p, ctypes.c_int, ctypes.c_double], None)
@@ -231,6 +234,7 @@ class OcisMILPNet:
 		self._set_all_gates_byType = self._bind("set_all_gates_byType", [ctypes.c_void_p, ctypes.c_double, ctypes.c_int], None)
 		self._save_states = self._bind("save_states", [ctypes.c_void_p, ctypes.c_char_p], None)
 		self._set_states = self._bind("set_states", [ctypes.c_void_p, ctypes.c_char_p], None)
+		self._compare_snapshot_sim = self._bind_optional("compare_snapshot_sim", [ctypes.c_void_p, ctypes.c_char_p], ctypes.c_int)
 		self._reset_states = self._bind("reset_states", [ctypes.c_void_p, ctypes.c_char_p], None)
 		self._reset_state_sim = self._bind("reset_state_sim", [ctypes.c_void_p, ctypes.c_char_p], None)
 		self._write_boundary_condition_flow = self._bind("write_boundary_condition_flow", [ctypes.c_void_p, ctypes.c_char_p], None)
@@ -282,7 +286,7 @@ class OcisMILPNet:
 	def set_step_t(self, value: float) -> float:
 		self._set_step_t(self.obj,value)
   
-	def set_delta_t(self, value: int) -> int:
+	def set_delta_t(self, value: int) -> None:
 		return self._set_delta_t(self.obj, value)
 
 
@@ -307,7 +311,9 @@ class OcisMILPNet:
 		self._Split_mesh(self.obj)
 
 	def set_CrossSection(self, path: str | Path, cs_start: int = 0, cs_end: int | None = None) -> None:
-		"""导入指定JSON/GeoJSON或目录；需先初始化网格。DLL仅更新床面高程。
+		"""导入指定JSON/GeoJSON或目录；需先初始化网格。
+
+		新版查表格式按渠道、桩号和节点编号导入横断面；旧格式更新床面高程。
 
 		单文件暂存于独立目录，防止DLL扫描同目录下其他GeoJSON。
 		目录方式会在该目录下写出ReWriteMesh网格。
@@ -324,12 +330,22 @@ class OcisMILPNet:
 		if not files:
 			raise ValueError("目录中没有GeoJSON文件")
 		counts = []
+		has_tables = False
 		for file in files:
 			root = json.loads(file.read_text(encoding="utf-8-sig"))
 			features = root.get("features")
 			if not isinstance(features, list):
 				raise ValueError(f"{file.name} 缺少features数组")
+			is_table = root.get("metadata", {}).get("format") == "ocis_section_tables_v1"
+			has_tables = has_tables or is_table
+			if is_table and self._get_cross_section_report is None:
+				raise UnsupportedExportError("当前 DLL 不支持横断面查表，需使用重新编译的版本")
 			for feature in features:
+				if is_table:
+					props = feature.get("properties", {})
+					if "hydraulic_lookup" not in props or not isinstance(props.get("model_node_ids"), list):
+						raise ValueError(f"{file.name}: 缺少查表状态或节点关联")
+					continue
 				geometry = feature.get("geometry") or {}
 				coords = geometry.get("coordinates")
 				if not isinstance(coords, list) or len(coords) < 3 or not all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in coords[:3]):
@@ -345,6 +361,17 @@ class OcisMILPNet:
 				self._set_CrossSection(self.obj, _as_path_bytes(directory + "/"), cs_start, cs_end)
 		else:
 			self._set_CrossSection(self.obj, _as_path_bytes(str(location) + "/"), cs_start, cs_end)
+		if self._get_cross_section_report is not None:
+			report = self.get_cross_section_report()
+			if isinstance(report, dict) and report.get("success") is False:
+				raise ValueError(f"DLL断面导入失败: {report.get('error', report)}")
+			if has_tables and (not isinstance(report, dict) or report.get("success") is not True):
+				raise ValueError("DLL未确认查表导入成功")
+
+	def get_cross_section_report(self) -> dict | None:
+		if self._get_cross_section_report is None:
+			raise UnsupportedExportError("当前 DLL 未导出 get_cross_section_report")
+		return json.loads(_decode_char_p(self._get_cross_section_report(self.obj)))
 
 	def Auto_correct_endpoint(self) -> None:
 		self._Auto_correct_endpoint(self.obj)
@@ -398,6 +425,17 @@ class OcisMILPNet:
 
 	def set_GatesBC_sim(self, GatesBC_obj: Any) -> None:
 		self._set_GatesBC_sim(self.obj, _as_bytes(GatesBC_obj))
+
+	def set_GatesDownstreamStage_sim(self, config: Any) -> None:
+		if self._set_GatesDownstreamStage_sim is None:
+			raise UnsupportedExportError("DLL lacks downstream stage boundary support")
+		if not self._set_GatesDownstreamStage_sim(self.obj, _as_bytes(config)):
+			raise OcisError(self.get_downstream_stage_report_sim().get("error", "invalid downstream stage"))
+
+	def get_downstream_stage_report_sim(self) -> dict[str, Any]:
+		if self._get_downstream_stage_report_sim is None:
+			raise UnsupportedExportError("DLL lacks downstream stage report")
+		return json.loads(_decode_char_p(self._get_downstream_stage_report_sim(self.obj)))
 
 	def set_GatesFlow_bynIndex_sim(self, nIndex: int, flow: float) -> None:
 		self._set_GatesFlow_bynIndex_sim(self.obj, int(nIndex), float(flow))
@@ -521,12 +559,18 @@ class OcisMILPNet:
 		self._set_all_gates_byType(self.obj, float(value), int(type))
 
 	def save_states(self, filename: str = "") -> None:
-		"""保存内存试算快照：水力变量、时钟、闸门和结果缓存；filename 为兼容参数。"""
+		"""保存完整内存快照。空名称保存周期试算态，非空名称保存多份命名快照；不写磁盘。"""
 		self._save_states(self.obj, _as_path_bytes(filename))
 
 	def set_states(self, filename: str = "") -> None:
-		"""恢复最近的试算快照，供同一交互周期重复尝试控制量。"""
+		"""空名称恢复周期试算态；非空名称恢复同一DLL对象的命名快照。"""
 		self._set_states(self.obj, _as_path_bytes(filename))
+
+	def compare_snapshot_sim(self, name: str) -> bool:
+		"""比较当前完整原生节点/闸门和时钟是否与命名快照一致。"""
+		if self._compare_snapshot_sim is None:
+			raise UnsupportedExportError("当前 DLL 未导出 compare_snapshot_sim")
+		return bool(self._compare_snapshot_sim(self.obj, _as_bytes(name)))
 
 	def reset_states(self, filename: str = "") -> None:
 		self._reset_states(self.obj, _as_path_bytes(filename))

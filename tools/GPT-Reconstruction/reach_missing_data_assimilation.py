@@ -668,6 +668,13 @@ def _build_runtime_config(
     )
     runtime["SIM"] = sim_cfg
 
+    section_file = sim_cfg.get("cross_section_path")
+    if section_file:
+        section_path = Path(section_file)
+        if not section_path.is_absolute():
+            section_path = case_dir / section_path
+        sim_cfg["cross_section_path"] = str(section_path.resolve())
+
     if isinstance(cfg.get("WATERALLOCATION"), dict):
         wa_cfg = dict(cfg["WATERALLOCATION"])
         wa_cfg["dirpath"] = f"{case_dir.as_posix()}/"
@@ -1012,6 +1019,13 @@ def _load_client(
             client.set_all_zb(float(config.initial_bed_level))
         except Exception:
             warnings.warn("DLL 未提供 set_all_zb，已跳过初始渠底高程设置", RuntimeWarning)
+    section_file = json.loads(runtime_config).get("SIM", {}).get("cross_section_path")
+    if section_file:
+        client.set_CrossSection(section_file)
+        report = client.get_cross_section_report()
+        unresolved = (report or {}).get("unresolved_sections", [])
+        if unresolved:
+            warnings.warn(f"断面查表部分导入：{len(unresolved)} 个断面保留原模型；详情见断面导入报告", RuntimeWarning)
     return client
 
 
