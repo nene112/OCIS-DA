@@ -1,0 +1,33 @@
+{
+  "base_dll_sha256": "a5db834ab5f9832858d36f0cc3df6c7767453ffbe87c361bb0f29dc88c332b53",
+  "dll_sha256": "0e9b4ad387c001b5ce98a965f2e0ffc4c0270e4cf1449d905dc656a2b33cffba",
+  "original_source_sha256": "52acb4c965e6d1830da418a2c8f70860368a369a3bd359373f39c590baa045e7",
+  "patched_source_sha256": "f8db3c62e9eebd57a357db244ec25fcf97f4e6e2abb08597a14ef12f0fa02523",
+  "original_water_source_sha256": "9714ce63f7cca83454b1e0dd5174e8f2c0d2c41d647da105eb80670f18415ff8",
+  "patched_water_source_sha256": "c542fc21ae7624afd328242f5f04154a9c1f1b3e2205784cb5d2fec841f1a2d4",
+  "change": "Two assignment fixes and two guards on whole-solver historical-output loops; hydraulic formulas unchanged",
+  "object_hashes": {
+    "edges_utils.obj": "81219bf2c7914676a7b4b6300f5fcea9f9a757604e0333b2ec8921c83b754b04",
+    "FastMaster.obj": "2fdb2cf23d9fe75e88e7a378c155c5872e158596a09539a0da55aa63307f2943",
+    "FastModePool.obj": "0d09e13da3189571b0ff9513c518ca65d7cf59360b83bbfcd31f02f29b2f960a",
+    "FastServiceBenefit.obj": "bc3e6138026b4bd648b4e1270150e25c98322619ca8e02ef14cc3b33dda5a91f",
+    "FileInteraction.obj": "c2b3344fb73a820161747763262fc1cf5bda111ec5917c0f2777d87cd4ef3a40",
+    "gates_hydraulic.obj": "0a9d8a0bef17abf51dbf5b2b99c6b2e6883d9efb564e4370d916ff12e00a96fb",
+    "ocis_bellman_threshold.obj": "37d4f27e6e7f1874c5320cd5d332a8b63c941c18b215e6d575dd43e6d6ed2604",
+    "ocis_lbbd_readable.obj": "680736325e87f3c0bf0c3aca1600000cc9b87a026eac58f3bc0f2347ae921d4b",
+    "ocis_lbbd_threshold.obj": "5caa3dde89b92b96e2e0faf10daeccb6acdf3957ef2c0a0e00b632abe113470c",
+    "ocis_scip_utils.obj": "65be6f459403a38a0b3fac1e34e9286c8367feb087cd76bebfffc54673215dae",
+    "OcisMILPDll_export.obj": "dbe1c693b7330aa9dc5263f8d687558e75da1730c9f48f3d3141bc2436b6b361",
+    "ocsi_MILP_scip_raii_wrapper.obj": "d46e3b723d7d39ba2c1eb4ca849bea5c3e17e2be440cd6a96f8e9cfe93e984eb",
+    "pid_warmup.obj": "6da788ee72c0e1fde80fecffe123f434258536a5cc5e887cfbdfe861ba13790a",
+    "statistics.obj": "64661f5ce36b69068dbc8081e25f2f874d7ffb45b7538c4b11e63df5d488ea14",
+    "TimeConversion.obj": "9ef8e638ffc343153871c430a2fe9ac5b0d7813ee285a9784e2958565558e67a",
+    "waga.obj": "d5217f966f95c9db93fcc5d27a374a6f9ff271543b8696cfd17ec128593cf96d",
+    "waga_config.obj": "17180b2e77c33f9290d90319a9313706d79c07c48265834d6a9188bd7f6caed8",
+    "waga_ocis.obj": "4e382716a97558094d8aac0dec183c743543689711cfde2f7a407f1d8912290b",
+    "waga_ocis_adapter.obj": "d34fa45f3126827b55ea4db9ee0383359934fa937df79c206418424dce227dee",
+    "waga_pipeline.obj": "1b733d2ce8d3a347741aa9d1e22f24c2cc06a6b16ec8c16dfdc11cec11e0470c",
+    "waga_types.obj": "ebdb07ac995bd268d352bfc6069f2816e86838641441e00379ba3e551d9e261a",
+    "waterSediment.obj": "4bc4b837c2d35d0bc18c291b4e58553e43a4dbd0fefbb61c5dd16045a5cf4f5b"
+  }
+}

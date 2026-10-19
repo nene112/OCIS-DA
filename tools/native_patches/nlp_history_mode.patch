@@ -1,0 +1,16 @@
+--- a/OcisMILPNet_dll/src/OcisMILPDll_export.cpp
++++ b/OcisMILPNet_dll/src/OcisMILPDll_export.cpp
+@@ -3265 +3265 @@
+-      obj->solver_sedi.store_internal_label == 1;
++      obj->solver_sedi.store_internal_label = 1;
+@@ -3268 +3268 @@
+-      obj->solver_sedi.store_internal_label == 0;
++      obj->solver_sedi.store_internal_label = 0;
+--- a/src/waterSediment.cpp
++++ b/src/waterSediment.cpp
+@@ -11177 +11177 @@
+-    for (int i = 0; i < param->wNodeCount; i++) {
++    for (int i = 0; store_internal_label == 1 && i < param->wNodeCount; i++) {
+@@ -11411 +11411 @@
+-  for (int i = 0; i < param->wNodeCount; i++) {
++  for (int i = 0; store_internal_label == 1 && i < param->wNodeCount; i++) {
