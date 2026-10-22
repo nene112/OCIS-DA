@@ -204,7 +204,11 @@ class OcisMILPNet:
 		
 
 		self._get_Total_T_step_count =self._bind("get_Total_T_step_count", [ctypes.c_void_p], ctypes.c_int)
-		self._get_stepdata_sim = self._bind("get_stepdata_sim", [ctypes.c_void_p, ctypes.c_char_p], ctypes.c_char_p)
+		# This legacy export returns new[] memory. c_char_p loses its address,
+		# so retain the pointer when the matching native deallocator exists.
+		self._free_stepdata_string = self._bind_optional("ocis_free_string", [ctypes.c_void_p], None)
+		self._get_stepdata_sim = self._bind("get_stepdata_sim", [ctypes.c_void_p, ctypes.c_char_p],
+			ctypes.c_void_p if self._free_stepdata_string is not None else ctypes.c_char_p)
 		self._get_pool_info_sim = self._bind("get_pool_info_sim", [ctypes.c_void_p], ctypes.c_char_p)
 		self._get_gate_info_sim = self._bind("get_gate_info_sim", [ctypes.c_void_p], ctypes.c_char_p)
       	
@@ -412,7 +416,14 @@ class OcisMILPNet:
 		return step.value
 
 	def get_stepdata_sim(self, datatype: str) -> str:
-		return _decode_char_p(self._get_stepdata_sim(self.obj, _as_bytes(datatype)))
+		value = self._get_stepdata_sim(self.obj, _as_bytes(datatype))
+		if self._free_stepdata_string is None:
+			return _decode_char_p(value)
+		try:
+			return _decode_char_p(ctypes.string_at(value)) if value else ""
+		finally:
+			if value:
+				self._free_stepdata_string(value)
 
 	def get_Total_T_step_count(self) :
 		return self._get_Total_T_step_count(self.obj)
